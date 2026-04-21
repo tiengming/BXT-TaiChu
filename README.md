@@ -4,42 +4,39 @@
 
 ## 🪐 视觉哲学 (Visionary Narrative)
 
-本项目不仅是一个导航页，更是一场关于“道”的动态演示：
-- **混沌期:** 暗色调 #161823 代表未知的宇宙原点。
-- **化生期:** #FF461F (阳/天) 与 #232021 (阴/地) 丝线交融。
-- **开辟期:** 金丹碰撞引发“宇宙大爆炸”，视觉色彩从暗转明，背景切换至 #F1F1F1。
-- **呈现期:** #EACD76 丝线最终凝结为“卜仙堂”字样。
+本项目通过四阶段动效，演示“道”的动态演化：
+1. **混沌期 (Chaos):** 暗色调 `#161823` 代表未知的宇宙原点。微弱呼吸感的粒子流动。
+2. **化生期 (Duality):** `朱砂 #FF461F` (阳) 与 `玄青 #232021` (阴) 丝线以**流体动力学**轨迹交融。
+3. **开辟期 (The Big Bang):** 金丹碰撞引发全屏反转，视觉色彩从暗转明，背景切换至具有宣纸质感的 `缟羽 #F1F1F1`。
+4. **呈现期 (Manifestation):** `黄金 #EACD76` 流光凝结为品牌标识，导航矩阵伴随墨韵浮现。
 
-## 🛠️ 开发与测试规范
+## 🎨 动效细节规范与审查标准
+
+### 1. 流动性规范 (Fluidity Spec)
+- **实现原理:** 丝线采用 `CatmullRomCurve3` 生成，并通过正弦波函数实时调制顶点坐标：`p.x += sin(time + progress) * amplitude`。
+- **视觉目标:** 消除机械感，模拟丝绸在风中或流体中滑动的有机质感。
+
+### 2. 审查标准 (Review Standard)
+本项目遵循 **《东方哲学视觉动效审查标准》**：
+- **流动性与有机感:** 路径需具备自然波动。
+- **阴阳平衡:** 对立元素交互需具备张力。
+- **韵律感:** 节奏遵循“疾徐结合”的物理逻辑。
+
+## 🛠️ 开发与测试
 
 ### 环境要求
 - Node.js 20+
-- npm 或 yarn
 
-### 开发与测试
-- 安装: npm install
-- 开发: npm run dev
-- 测试: npm test
+### 快速开始
+- 安装: `npm install`
+- 开发: `npm run dev`
+- 测试: `npm test`
 
-### 代码规范
-- WebGL: 场景逻辑封装在 src/cosmogony.js，使用 ES6 Class 管理。
-- 动画: 核心时间轴由 GSAP 驱动，确保转场平滑。
-- 样式: 遵循传统中国色定义，使用 CSS 变量管理颜色主题。
+## 🚀 部署
 
-## 🚀 部署方案
-
-### Cloudflare Workers
-项目配置了 wrangler.toml，支持一键部署到 Cloudflare。
-- 构建: npm run build
-- 发布: wrangler publish
-
-### GitHub Pages
-项目支持通过 GitHub Actions 自动部署到 GitHub Pages。
-
-### CI/CD 流程
-1. Lint & Test: 验证代码质量。
-2. Build: 生成生产环境资源。
-3. Deploy: 分别推送到 Cloudflare 与 GitHub Pages。
+### Cloudflare Workers & GitHub Pages
+- 构建: `npm run build`
+- 部署: 通过 GitHub Actions 自动化推送到 CF Worker 和 GitHub Pages。
 
 ---
 © 2026 卜仙堂 - 易理、技术与美学的融合。

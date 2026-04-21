@@ -18,7 +18,7 @@ export class Cosmogony {
         this.yinRibbon = null;
         this.yangRibbon = null;
         this.goldCore = null;
-        this.explosionParticles = null;
+        this.clock = new THREE.Clock();
 
         window.addEventListener('resize', () => this.onWindowResize());
     }
@@ -58,28 +58,54 @@ export class Cosmogony {
         });
     }
 
-    initDuality() {
-        const yangPoints = [];
-        for (let i = 0; i < 50; i++) {
-            yangPoints.push(new THREE.Vector3(0, 10 - i * 0.4, 0));
+    createFluidRibbon(color, isTop) {
+        const points = [];
+        for (let i = 0; i <= 50; i++) {
+            points.push(new THREE.Vector3(0, isTop ? 10 : -10, 0));
         }
-        const yangCurve = new THREE.CatmullRomCurve3(yangPoints);
-        const yangGeo = new THREE.TubeGeometry(yangCurve, 64, 0.02, 8, false);
-        const yangMat = new THREE.MeshBasicMaterial({ color: 0xFF461F });
-        this.yangRibbon = new THREE.Mesh(yangGeo, yangMat);
-        this.yangRibbon.position.y = 10;
-        this.scene.add(this.yangRibbon);
+        const curve = new THREE.CatmullRomCurve3(points);
+        const geo = new THREE.TubeGeometry(curve, 100, 0.03, 8, false);
+        const mat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.8 });
+        const ribbon = new THREE.Mesh(geo, mat);
 
-        const yinPoints = [];
-        for (let i = 0; i < 50; i++) {
-            yinPoints.push(new THREE.Vector3(0, -10 + i * 0.4, 0));
-        }
-        const yinCurve = new THREE.CatmullRomCurve3(yinPoints);
-        const yinGeo = new THREE.TubeGeometry(yinCurve, 64, 0.02, 8, false);
-        const yinMat = new THREE.MeshBasicMaterial({ color: 0x232021 });
-        this.yinRibbon = new THREE.Mesh(yinGeo, yinMat);
-        this.yinRibbon.position.y = -10;
-        this.scene.add(this.yinRibbon);
+        // Store original points for fluid animation
+        ribbon.userData.originalPoints = points.map(p => p.clone());
+        ribbon.userData.isTop = isTop;
+
+        return ribbon;
+    }
+
+    initDuality() {
+        this.yangRibbon = this.createFluidRibbon(0xFF461F, true);
+        this.yinRibbon = this.createFluidRibbon(0x232021, false);
+        this.scene.add(this.yangRibbon, this.yinRibbon);
+    }
+
+    updateRibbons(time) {
+        [this.yangRibbon, this.yinRibbon].forEach(ribbon => {
+            if (!ribbon) return;
+            const points = ribbon.userData.originalPoints;
+            const isTop = ribbon.userData.isTop;
+            const newPoints = [];
+
+            for (let i = 0; i < points.length; i++) {
+                const p = points[i].clone();
+                const progress = i / points.length;
+
+                // Fluid motion: combine sine waves for organic feel
+                const amp = 0.5 * Math.sin(time + progress * 5);
+                const freq = 2;
+                p.x += Math.sin(time * freq + progress * 10) * amp;
+                p.z += Math.cos(time * freq + progress * 10) * amp;
+
+                // Keep moving towards center
+                newPoints.push(p);
+            }
+
+            const newCurve = new THREE.CatmullRomCurve3(newPoints);
+            ribbon.geometry.dispose();
+            ribbon.geometry = new THREE.TubeGeometry(newCurve, 100, 0.03, 8, false);
+        });
     }
 
     initBigBang() {
@@ -87,16 +113,6 @@ export class Cosmogony {
         const mat = new THREE.MeshBasicMaterial({ color: 0xEACD76, transparent: true, opacity: 0 });
         this.goldCore = new THREE.Mesh(geo, mat);
         this.scene.add(this.goldCore);
-
-        const expGeo = new THREE.BufferGeometry();
-        const expPos = [];
-        for (let i = 0; i < 1000; i++) {
-            expPos.push(0, 0, 0);
-        }
-        expGeo.setAttribute('position', new THREE.Float32BufferAttribute(expPos, 3));
-        const expMat = new THREE.PointsMaterial({ color: 0xEACD76, size: 0.05, transparent: true, opacity: 0 });
-        this.explosionParticles = new THREE.Points(expGeo, expMat);
-        this.scene.add(this.explosionParticles);
     }
 
     start() {
@@ -105,23 +121,42 @@ export class Cosmogony {
 
         // Phase 1: Chaos
         mainTl.add(() => this.initChaos());
-        mainTl.to({}, { duration: 3 }); // Wait in chaos
+        mainTl.to({}, { duration: 2 });
 
-        // Phase 2: Duality
+        // Phase 2: Duality (Converging fluid ribbons)
         mainTl.add(() => this.initDuality());
-        mainTl.to(this.yangRibbon.position, { y: 0, duration: 4, ease: "power2.inOut" }, "+=0");
-        mainTl.to(this.yinRibbon.position, { y: 0, duration: 4, ease: "power2.inOut" }, "-=4");
+
+        // Custom animation for ribbon points convergence
+        const convergence = { val: 0 };
+        mainTl.to(convergence, {
+            val: 1,
+            duration: 6,
+            ease: "power2.inOut",
+            onUpdate: () => {
+                const v = convergence.val;
+                [this.yangRibbon, this.yinRibbon].forEach(ribbon => {
+                    if (!ribbon) return;
+                    const points = ribbon.userData.originalPoints;
+                    const isTop = ribbon.userData.isTop;
+                    points.forEach((p, i) => {
+                        const targetY = (i / points.length - 0.5) * 4; // Spread around center
+                        const startY = isTop ? 10 - i * 0.2 : -10 + i * 0.2;
+                        p.y = startY + (targetY - startY) * v;
+                    });
+                });
+            }
+        });
 
         // Phase 3: Big Bang
-        mainTl.add(() => this.initBigBang());
+        mainTl.add(() => this.initBigBang(), "-=1");
         mainTl.to(this.goldCore.material, { opacity: 1, duration: 1 });
-        mainTl.to(this.goldCore.scale, { x: 50, y: 50, z: 50, duration: 0.5, ease: "expo.in" });
+        mainTl.to(this.goldCore.scale, { x: 80, y: 80, z: 80, duration: 0.8, ease: "expo.in" });
         mainTl.add(() => {
             document.body.classList.add('paper-mode');
-            this.particles.visible = false;
-            this.yangRibbon.visible = false;
-            this.yinRibbon.visible = false;
-            this.goldCore.visible = false;
+            if (this.particles) this.particles.visible = false;
+            if (this.yangRibbon) this.yangRibbon.visible = false;
+            if (this.yinRibbon) this.yinRibbon.visible = false;
+            if (this.goldCore) this.goldCore.visible = false;
         });
 
         // Phase 4: Manifestation
@@ -139,7 +174,11 @@ export class Cosmogony {
 
     render() {
         requestAnimationFrame(() => this.render());
+        const time = this.clock.getElapsedTime();
+
         if (this.particles) this.particles.rotation.y += 0.001;
+        this.updateRibbons(time);
+
         if (this.renderer) this.renderer.render(this.scene, this.camera);
     }
 }
