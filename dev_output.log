@@ -8,3 +8,11 @@
   ➜  Local:   http://localhost:5173/
   ➜  Network: use --host to expose
 9:12:36 AM [vite] (client) page reload src/cosmogony.js
+9:21:58 AM [vite] (client) page reload src/cosmogony.js
+9:22:20 AM [vite] (client) page reload src/cosmogony.js
+9:22:46 AM [vite] (client) page reload src/cosmogony.js
+9:23:00 AM [vite] (client) page reload src/main.js
+9:23:13 AM [vite] (client) hmr update /src/styles.css?direct
+9:23:32 AM [vite] (client) page reload src/cosmogony.js
+9:23:49 AM [vite] (client) page reload src/main.js
+9:23:49 AM [vite] (client) hmr update /src/styles.css?direct
