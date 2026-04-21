@@ -1,0 +1,23 @@
+{
+  "brand": "卜仙堂",
+  "navigation": [
+    {
+      "name": "博客入口",
+      "url": "https://blog.buxiantang.com",
+      "hoverColor": "#FF461F",
+      "description": "易理与技术的交汇点"
+    },
+    {
+      "name": "经典解析",
+      "url": "https://docs.buxiantang.com",
+      "hoverColor": "#EACD76",
+      "description": "古籍与算法的共鸣"
+    },
+    {
+      "name": "社交媒体",
+      "url": "https://weibo.com/buxiantang",
+      "hoverColor": "#232021",
+      "description": "感悟当下的点滴"
+    }
+  ]
+}
