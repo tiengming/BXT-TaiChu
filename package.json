@@ -9,6 +9,7 @@
     "test": "vitest run"
   },
   "devDependencies": {
+    "@cloudflare/kv-asset-handler": "^0.4.2",
     "@testing-library/dom": "^10.4.0",
     "gsap": "^3.12.5",
     "jsdom": "^26.0.0",
