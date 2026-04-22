@@ -249,8 +249,8 @@ export default {
             crystal: 2.0     // 凝结期
         },
         LINKS: {
-            blog: '#', classics: '#', about: '#',
-            wechat: '#', bilibili: '#', email: '#'
+            blog: 'https://blog.buxiantang.top', classics: 'https://anal.buxiantang.top/about', about: 'https://blog.buxiantang.top/about',
+            wechat: 'https://mp.weixin.qq.com/mp/profile_ext?action=home&__biz=MzIwNzY4NDU3Nw==#wechat_redirect', bilibili: 'https://space.bilibili.com/265656567', email: 'mailto:tiengming@qq.com'
         }
     };
 
