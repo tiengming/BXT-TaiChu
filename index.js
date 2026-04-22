@@ -11,17 +11,34 @@ export default {
     <!-- Font Awesome 图标库 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
-        /* ===== 中国色变量 (参考 zhongguose.com) ===== */
+        /* ============================================
+           集中配置模块 (用户可自定义)
+           ============================================ */
         :root {
-            --color-void: #0a0a0f;      /* 极渊黑 */
-            --color-paper: #F1F1F1;      /* 缟羽 */
-            --color-yang: #FF461F;       /* 朱砂 */
-            --color-yin: #232021;        /* 玄青 */
-            --color-gold: #EACD76;       /* 金 */
-            --color-amber: #CA6924;      /* 琥珀 */
-            --color-ink: #50616D;        /* 墨色 */
-            --color-cyan: #425066;       /* 黛蓝 */
-            --color-ivory: #EEDEB0;      /* 牙色 */
+            /* 色彩配置 (参考中国色 zhongguose.com) */
+            --color-void: #0a0a0f;      /* 极渊黑 (混沌) */
+            --color-paper: #F1F1F1;      /* 缟羽 (宣纸) */
+            --color-yang: #FF461F;       /* 朱砂 (阳) */
+            --color-yin: #232021;        /* 玄青 (阴) */
+            --color-gold: #EACD76;       /* 金 (凝结) */
+            --color-amber: #CA6924;      /* 琥珀 (点缀) */
+            --color-ink: #50616D;        /* 墨色 (文字) */
+            --color-cyan: #425066;       /* 黛蓝 (阴线发光) */
+            --color-ivory: #EEDEB0;      /* 牙色 (纹理暖调) */
+
+            /* 动画时长配置 */
+            --dur-chaos: 0.5s;
+            --dur-spiral: 5.2s;
+            --dur-bang: 0.6s;
+            --dur-crystallize: 2.2s;
+
+            /* 布局偏移量 (可调) */
+            --logo-top: 8vh;
+            --logo-left: 5vw;
+            --nav-right: 6vw;
+            --nav-top: 10vh;
+            --footer-bottom: 2vh;
+            --footer-right: 6vw;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -56,113 +73,128 @@ export default {
             pointer-events: none; z-index: 4;
         }
 
-        /* ===== UI 层 ===== */
+        /* ===== 三层气脉布局 (东方章法) ===== */
         #ui-layer {
-            position: absolute; top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
             z-index: 20;
-            text-align: center;
             pointer-events: none;
-            width: 100%;
-            padding: 0 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            padding: 5% 0;
+            box-sizing: border-box;
         }
 
+        /* 第一层：主峰 Logo —— 左偏上 */
         .logo-wrapper {
-            display: inline-block;
-            pointer-events: none;
             position: relative;
+            align-self: flex-start;
+            margin-top: var(--logo-top);
+            margin-left: var(--logo-left);
+            pointer-events: none;
         }
 
         #logo-canvas {
-            width: min(360px, 70vw);
+            width: min(420px, 75vw);
             height: auto;
             aspect-ratio: 360/140;
             opacity: 0;
-            transition: opacity 1.2s ease;
-            filter: drop-shadow(0 4px 12px rgba(234, 205, 118, 0.4));
+            transition: opacity 1.5s cubic-bezier(0.2, 0.9, 0.3, 1);
+            filter: drop-shadow(8px 8px 16px rgba(0,0,0,0.08));
             pointer-events: none;
         }
 
-        /* 导航矩阵 */
+        /* 第二层：案几导航 —— 右下方，与Logo形成对角 */
         .matrix-nav {
-            margin-top: 40px;
+            position: relative;
+            align-self: flex-end;
+            margin-top: var(--nav-top);
+            margin-right: var(--nav-right);
             display: flex;
-            gap: 36px;
-            justify-content: center;
+            gap: 2.8rem;
             opacity: 0;
             pointer-events: none;
-            flex-wrap: wrap;
         }
 
         .nav-item {
             color: var(--color-ink);
             text-decoration: none;
-            font-size: clamp(14px, 4vw, 18px);
-            letter-spacing: 6px;
-            padding-bottom: 8px;
+            font-size: clamp(18px, 5vw, 24px);
+            letter-spacing: 8px;
+            padding-bottom: 12px;
             pointer-events: auto;
-            opacity: 0.75;
+            opacity: 0.7;
             cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
             position: relative;
+        }
+
+        /* 界画分隔 (墨点) */
+        .nav-item:not(:last-child)::after {
+            content: '·';
+            position: absolute;
+            right: -1.8rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--color-amber);
+            font-size: 20px;
+            opacity: 0.4;
         }
 
         .nav-item:hover {
             color: var(--color-yang);
             opacity: 1;
-            transform: translateY(-3px);
+            transform: translateX(4px);
         }
 
-        /* 社交媒体图标行 */
+        /* 第三层：印章落款 —— 右下角 */
         .social-row {
-            margin-top: 48px;
+            position: absolute;
+            bottom: 8vh;
+            right: var(--footer-right);
             display: flex;
-            gap: 32px;
-            justify-content: center;
+            gap: 24px;
             opacity: 0;
             pointer-events: none;
         }
 
         .social-icon {
             color: var(--color-amber);
-            font-size: 28px;
+            font-size: 26px;
             pointer-events: auto;
             cursor: pointer;
-            transition: all 0.3s ease;
-            filter: drop-shadow(0 0 4px rgba(202, 105, 36, 0.3));
+            transition: all 0.3s;
+            opacity: 0.6;
         }
 
         .social-icon:hover {
             color: var(--color-yang);
-            transform: scale(1.15) translateY(-2px);
+            opacity: 1;
+            transform: translateY(-4px);
             filter: drop-shadow(0 0 12px var(--color-yang));
         }
 
-        /* 页脚 */
+        /* 页脚小字 (落款) */
         .footer {
             position: absolute;
-            bottom: 18px;
-            left: 0;
-            width: 100%;
-            text-align: center;
+            bottom: var(--footer-bottom);
+            right: var(--footer-right);
             color: var(--color-ink);
-            font-size: 12px;
+            font-size: 11px;
             letter-spacing: 4px;
             opacity: 0;
-            z-index: 20;
+            text-align: right;
             pointer-events: none;
             transition: opacity 1.5s;
-        }
-
-        .footer span {
-            opacity: 0.6;
         }
 
         /* 音频提示 */
         #audio-prompt {
             position: absolute;
             bottom: 20px;
-            right: 24px;
+            left: 24px;
             color: var(--color-amber);
             font-size: 12px;
             opacity: 0.5;
@@ -182,25 +214,27 @@ export default {
 </div>
 
 <div id="ui-layer">
+    <!-- 第一层：Logo 左上方 -->
     <div class="logo-wrapper">
         <canvas id="logo-canvas" width="360" height="140"></canvas>
     </div>
 
+    <!-- 第二层：导航右下方 -->
     <div class="matrix-nav">
-        <a href="#blog" class="nav-item" data-text="博客入口">博客入口</a>
-        <a href="#classics" class="nav-item" data-text="经典解析">经典解析</a>
-        <a href="#socials" class="nav-item" data-text="社交媒体">社交媒体</a>
+        <a href="#blog" class="nav-item">博客入口</a>
+        <a href="#classics" class="nav-item">经典解析</a>
+        <a href="#socials" class="nav-item">社交媒体</a>
     </div>
 
+    <!-- 第三层：社交与页脚右下角 -->
     <div class="social-row">
         <a href="#" class="social-icon" title="微信公众号"><i class="fab fa-weixin"></i></a>
         <a href="#" class="social-icon" title="Bilibili"><i class="fab fa-bilibili"></i></a>
         <a href="#" class="social-icon" title="电子邮箱"><i class="fas fa-envelope"></i></a>
     </div>
-</div>
-
-<div class="footer">
-    <span>© 卜仙堂 · 大象无形 · 道隐无名</span>
+    <div class="footer">
+        <span>© 卜仙堂 · 道隐无名</span>
+    </div>
 </div>
 
 <div id="audio-prompt">⚲ 轻触闻道</div>
@@ -208,6 +242,41 @@ export default {
 <script>
 (function(){
     "use strict";
+
+    /* ============================================
+       集中配置模块 (用户可修改以下常量)
+       ============================================ */
+    const CONFIG = {
+        // 粒子数量与行为
+        MAX_PARTICLES: 5000,
+        PARTICLE_SPEED_BASE: { yang: 18, yin: 10, gold: 6 },
+        PARTICLE_DECAY: { min: 0.004, max: 0.012 },
+        TEXT_SAMPLE_STEP: 2,          // 文字路径采样密度
+        
+        // 轨迹参数
+        MAX_TRAIL_LENGTH: 55,
+        LORENZ_SIGMA: 10,
+        LORENZ_RHO: 28,
+        LORENZ_BETA: 8/3,
+        LORENZ_DT: 0.012,
+        
+        // 音频
+        AUDIO_FREQ: 42,
+        AUDIO_DURATION: 2.5,
+        AUDIO_VOLUME: 0.02,
+        
+        // 交互
+        INK_DROP_LIFE: 0.9,
+        INK_DROP_RADIUS: 2,
+        MOUSE_INK_PROBABILITY: 0.25,
+        
+        // 文字
+        MAIN_TEXT: '卜仙堂',
+        FONT: "bold 86px 'STKaiti', 'KaiTi', 'Noto Serif SC', serif",
+        
+        // 页脚文字
+        FOOTER_TEXT: '© 卜仙堂 · 道隐无名',
+    };
 
     // ---------- 画布与全局变量 ----------
     const bgCanvas = document.getElementById('bg-canvas');
@@ -224,7 +293,7 @@ export default {
 
     let w, h, cx, cy;
 
-    // ---------- 中国色 ----------
+    // ---------- 中国色 (从CSS变量读取，也可硬编码) ----------
     const COLORS = {
         void: '#0a0a0f',
         paper: '#F1F1F1',
@@ -245,18 +314,14 @@ export default {
         coreSize: 0,
         bgColor: COLORS.void,
         lx: 0.1, ly: 0, lz: 0,
-        textSolidified: false   // 文字是否已固化
+        textSolidified: false
     };
 
     const particles = [];
-    const MAX_PARTICLES = 5000;
     const trails = { yang: [], yin: [] };
-    const MAX_TRAIL = 55;
-
-    // 文字目标点阵
     let textTargetPoints = [];
 
-    // ---------- 宣纸纹理生成 ----------
+    // ---------- 宣纸纹理生成 (使用噪声) ----------
     function generateTexture() {
         const tw = textureCanvas.width, th = textureCanvas.height;
         if (tw === 0 || th === 0) return;
@@ -275,21 +340,21 @@ export default {
         texCtx.putImageData(imageData, 0, 0);
     }
 
-    // ---------- 计算“卜仙堂”路径点阵 ----------
+    // ---------- 计算文字路径点阵 ----------
     function computeTextPoints() {
         const offCanvas = new OffscreenCanvas(360, 140);
         const offCtx = offCanvas.getContext('2d');
         offCtx.clearRect(0, 0, 360, 140);
-        offCtx.font = "bold 86px 'STKaiti', 'KaiTi', 'Noto Serif SC', serif";
+        offCtx.font = CONFIG.FONT;
         offCtx.textAlign = "center";
         offCtx.textBaseline = "middle";
         offCtx.fillStyle = "#ffffff";
-        offCtx.fillText("卜仙堂", 180, 70);
+        offCtx.fillText(CONFIG.MAIN_TEXT, 180, 70);
         
         const imgData = offCtx.getImageData(0, 0, 360, 140);
         const data = imgData.data;
         const points = [];
-        const step = 2; // 密度
+        const step = CONFIG.TEXT_SAMPLE_STEP;
         for (let y = 0; y < 140; y += step) {
             for (let x = 0; x < 360; x += step) {
                 const idx = (y * 360 + x) * 4;
@@ -311,12 +376,13 @@ export default {
             this.x = x; this.y = y;
             this.type = type; // 0:阳, 1:阴, 2:金(文字)
             const angle = Math.random() * Math.PI * 2;
-            const speed = type === 0 ? 18 : (type === 1 ? 10 : 6);
+            const speedCfg = CONFIG.PARTICLE_SPEED_BASE;
+            const speed = type === 0 ? speedCfg.yang : (type === 1 ? speedCfg.yin : speedCfg.gold);
             this.vx = Math.cos(angle) * speed * (0.7 + Math.random()*0.6);
             this.vy = Math.sin(angle) * speed * (0.7 + Math.random()*0.6);
             this.size = type === 2 ? 1.8 : (2.2 + Math.random()*2.5);
             this.life = 1.0;
-            this.decay = 0.004 + Math.random()*0.008;
+            this.decay = CONFIG.PARTICLE_DECAY.min + Math.random() * (CONFIG.PARTICLE_DECAY.max - CONFIG.PARTICLE_DECAY.min);
             if (type === 2) {
                 this.target = null;
                 this.settled = false;
@@ -354,7 +420,7 @@ export default {
             if (this.type !== 2 || !this.settled) {
                 this.life -= this.decay;
             } else {
-                this.life = 0.95; // 保持可见
+                this.life = 0.95;
             }
         }
         draw(ctx) {
@@ -362,7 +428,7 @@ export default {
             ctx.globalAlpha = this.life * (this.type === 1 ? 0.8 : 1.0);
             let color;
             if (this.type === 0) color = COLORS.yang;
-            else if (this.type === 1) color = COLORS.cyan; // 用黛蓝提亮阴线
+            else if (this.type === 1) color = COLORS.cyan;  // 阴线用黛蓝提亮
             else color = COLORS.gold;
             
             ctx.fillStyle = color;
@@ -380,11 +446,11 @@ export default {
 
     // ---------- 洛伦兹吸引子更新轨迹 ----------
     function updateTrails() {
-        const sigma = 10, rho = 28, beta = 8/3;
-        const dt = 0.012;
-        const dx = sigma * (sim.ly - sim.lx) * dt;
-        const dy = (sim.lx * (rho - sim.lz) - sim.ly) * dt;
-        const dz = (sim.lx * sim.ly - beta * sim.lz) * dt;
+        const s = CONFIG.LORENZ_SIGMA, r = CONFIG.LORENZ_RHO, b = CONFIG.LORENZ_BETA;
+        const dt = CONFIG.LORENZ_DT;
+        const dx = s * (sim.ly - sim.lx) * dt;
+        const dy = (sim.lx * (r - sim.lz) - sim.ly) * dt;
+        const dz = (sim.lx * sim.ly - b * sim.lz) * dt;
         sim.lx += dx; sim.ly += dy; sim.lz += dz;
         const scale = Math.min(w, h) * 0.016;
         const yangX = cx + sim.lx * scale;
@@ -393,8 +459,8 @@ export default {
         const yinY = cy - sim.lx * scale * 0.75;
         trails.yang.push({x: yangX, y: yangY});
         trails.yin.push({x: yinX, y: yinY});
-        if (trails.yang.length > MAX_TRAIL) trails.yang.shift();
-        if (trails.yin.length > MAX_TRAIL) trails.yin.shift();
+        if (trails.yang.length > CONFIG.MAX_TRAIL_LENGTH) trails.yang.shift();
+        if (trails.yin.length > CONFIG.MAX_TRAIL_LENGTH) trails.yin.shift();
         sim.orbitRadius = Math.hypot(sim.lx, sim.ly) * scale;
     }
 
@@ -499,20 +565,19 @@ export default {
             }
         }
 
-        // 若文字已固化，绘制实体书法字 (叠加在粒子上方)
+        // 若文字已固化，绘制实体书法字
         if (sim.textSolidified) {
             logoCtx.clearRect(0, 0, 360, 140);
-            logoCtx.font = "bold 86px 'STKaiti', 'KaiTi', 'Noto Serif SC', serif";
+            logoCtx.font = CONFIG.FONT;
             logoCtx.textAlign = "center";
             logoCtx.textBaseline = "middle";
-            // 金色渐变
             const grad = logoCtx.createLinearGradient(60, 0, 300, 140);
             grad.addColorStop(0, COLORS.gold);
             grad.addColorStop(0.6, COLORS.amber);
             logoCtx.fillStyle = grad;
             logoCtx.shadowBlur = 20;
             logoCtx.shadowColor = COLORS.amber;
-            logoCtx.fillText("卜仙堂", 180, 70);
+            logoCtx.fillText(CONFIG.MAIN_TEXT, 180, 70);
             logoCtx.shadowBlur = 0;
         }
 
@@ -561,17 +626,16 @@ export default {
         // 文字固化触发
         tl.add(() => {
             sim.textSolidified = true;
-            // 凝固瞬间闪光
             logoCanvas.style.transition = 'filter 0.8s';
             logoCanvas.style.filter = 'drop-shadow(0 0 30px #EACD76)';
-            setTimeout(() => logoCanvas.style.filter = 'drop-shadow(0 4px 12px rgba(234,205,118,0.4))', 400);
+            setTimeout(() => logoCanvas.style.filter = 'drop-shadow(8px 8px 16px rgba(0,0,0,0.08))', 400);
         }, "+=2.0");
         
-        // UI 显现
+        // UI 显现 (对角布局动画)
         tl.to(logoCanvas, { opacity: 1, duration: 1.8 }, "-=0.5");
-        tl.to(".matrix-nav", { opacity: 1, y: -12, duration: 1.5, stagger: 0.15 }, "-=1.2");
-        tl.to(".social-row", { opacity: 1, y: -8, duration: 1.5 }, "-=1.0");
-        tl.to(".footer", { opacity: 1, duration: 2.0 }, "-=1.8");
+        tl.fromTo(".matrix-nav", { opacity: 0, x: 30 }, { opacity: 1, x: 0, duration: 1.5, ease: "power2.out" }, "-=1.2");
+        tl.fromTo(".social-row", { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 1.5 }, "-=0.8");
+        tl.to(".footer", { opacity: 0.7, duration: 2.0 }, "-=1.5");
     }
 
     // ---------- 交互事件 ----------
@@ -586,8 +650,8 @@ export default {
             const b = n.getBoundingClientRect();
             if (e.clientX >= b.left-30 && e.clientX <= b.right+30 && e.clientY >= b.top-30 && e.clientY <= b.bottom+30) near = true;
         });
-        if (near && Math.random() < 0.25) {
-            inkDrops.push({ x, y, radius: 2, life: 0.9 });
+        if (near && Math.random() < CONFIG.MOUSE_INK_PROBABILITY) {
+            inkDrops.push({ x, y, radius: CONFIG.INK_DROP_RADIUS, life: CONFIG.INK_DROP_LIFE });
         }
     }
 
@@ -600,12 +664,12 @@ export default {
                 const actx = new AudioContext();
                 const osc = actx.createOscillator();
                 osc.type = 'sine';
-                osc.frequency.value = 42;
+                osc.frequency.value = CONFIG.AUDIO_FREQ;
                 const gain = actx.createGain();
-                gain.gain.value = 0.02;
+                gain.gain.value = CONFIG.AUDIO_VOLUME;
                 osc.connect(gain).connect(actx.destination);
                 osc.start();
-                osc.stop(actx.currentTime + 2.5);
+                osc.stop(actx.currentTime + CONFIG.AUDIO_DURATION);
             }
             document.getElementById('audio-prompt').style.opacity = '0';
         }
