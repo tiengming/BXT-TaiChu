@@ -1,112 +1,141 @@
 
-# 卜仙堂 (BuXianTang) - 品牌门户：鸿蒙开辟篇
+# 卜仙堂 (BuXianTang) - 鸿蒙开辟篇
 
-> 基于 Cloudflare Workers 部署的品牌导航单页，通过原生 Canvas 2D 粒子引擎与 GSAP 时间轴，演绎从混沌开辟到金丹化字的东方哲学视觉。
+> 基于 Cloudflare Workers 部署的品牌导航单页。通过 Canvas 2D 粒子引擎与 GSAP 时间轴，演绎从混沌开辟到金丹化字的东方哲学视觉。
 
-## 🪐 视觉哲学 (Visionary Narrative)
+[![Deploy to Cloudflare Workers](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/tiengming/BXT-TaiChu)
+
+## 🪐 视觉叙事
 
 本项目不仅是一个导航页，更是一场关于“道”的动态演示：
 
-- **混沌期:** 背景为 **极渊黑** `#0a0a0f`，代表未知的宇宙原点，仅有微弱呼吸感。
-- **化生期:** **朱砂** `#FF461F` (阳/天) 与 **黛蓝** `#425066` (阴/地) 双丝以洛伦兹吸引子轨迹盘旋靠近，张力渐增。
-- **开辟期:** 双丝交汇凝为 **金丹**，随即爆发“宇宙大爆炸”，背景色瞬间由暗转明，切换至 **牙色** `#EEDEB0`（仿古宣纸暖白）。
-- **呈现期:** 爆炸粒子中的 **黄金** `#EACD76` 粒子沿书法路径吸附凝结，最终固化为“卜仙堂”实体字样，导航与社交图标如落款般渐显。
+- **混沌期**：背景为 **极渊黑** `#0a0a0f`，画面极静，如宇宙原点。
+- **化生期**：天降红丝（**朱砂** `#FF461F`），地升黑丝（**玄青** `#344352`），双股能量如烟雾盘旋靠近。
+- **开辟期**：两股能量在中心碰撞，生成逆时针漩涡，最终凝结为 **金丹**。金丹爆发，粒子四散，背景瞬间切换为暖白宣纸色 `#F3F0E6`。
+- **呈现期**：爆炸中的 **黄金** `#EACD76` 粒子沿书法路径汇聚，凝结为“卜仙堂”三字，导航矩阵与社交入口如印章落款般渐显。
 
-### 🎨 视觉叙事阶段详解
+### 叙事阶段详表
 
-1.  **第一阶段：混沌 (Primordial Chaos)**
-    - **背景：** 极渊黑 `#0a0a0f`，叠加程序化生成的宣纸纤维纹理。
-    - **氛围：** 视觉完全静默，为后续的爆发积蓄势能。
-
-2.  **第二阶段：阴阳化生 (Duality of Yin & Yang)**
-    - **动效：** 朱砂阳线与黛蓝阴线以非线性混沌轨迹（Lorenz Attractor）在画布中盘旋收缩。
-    - **视觉增强：** 双线均采用双层描边与发光模糊，确保在暗色背景中清晰可辨。轨迹接近终点时，画布产生微幅震颤，预示奇点失稳。
-
-3.  **第三阶段：金丹大成 & 宇宙大爆炸 (The Big Bang)**
-    - **交汇：** 双线轨迹于几何中心碰撞，瞬间凝结为一粒旋转的金色光球。
-    - **爆炸：** 金丹急剧收缩后猛烈扩张，触发全屏白光闪烁（模拟太初之光），同时喷射出数千个朱砂、黛蓝、黄金三色粒子。
-    - **色调翻转：** 背景色在爆炸余晖中迅速过渡为 **牙色** `#EEDEB0`，如同混沌初开、天地分明。
-
-4.  **第四阶段：勾勒真名 (The Manifestation)**
-    - **Logo 生成：** 爆炸中释放的黄金粒子受预设文字路径吸引，从四面八方汇聚、吸附、定形，最终凝固为带有金色渐变的书法字“卜仙堂”。
-    - **交互界面：** 文字下方，导航栏与社交媒体图标以“印章落款”的形式，伴随墨晕涟漪渐次浮现。鼠标悬停可触发墨点扩散效果，点击则有涟漪与低频道音反馈。
+| 阶段 | 时间 | 视觉重点 |
+|------|------|----------|
+| 混沌 | 0s – 1s | 纯黑背景，微弱星云呼吸感。 |
+| 化生 | 1s – 5.5s | 红丝自顶落下，黑丝自底升起，尾部呈烟雾状，接近时逆时针漩涡生成。 |
+| 爆发 | 5.5s – 7s | 金丹生长、爆炸，喷射红/黑/金粒子，背景转为宣纸色。 |
+| 真名 | 7s – 9s | 金色粒子吸附成字，文字本体以水墨晕染效果浮现，导航 UI 淡入。 |
 
 ---
 
-## 🛠️ 技术实现 (Technology Stack)
+## 🛠️ 技术架构
 
-本项目为 **单文件 Cloudflare Worker**，无需外部构建工具，所有代码内嵌于 Worker 响应体中。
-
-- **渲染引擎：** 原生 **Canvas 2D API**（多层画布架构：背景层、粒子层、纹理层、墨韵层）。
-- **动画控制：** **GSAP 3** 驱动完整时间轴，精确同步粒子生成、背景色过渡、文字固化及 UI 入场。
-- **物理模拟：** 自定义轻量粒子系统（含引力吸附），洛伦兹吸引子驱动阴阳轨迹。
-- **排版与 UI：** 响应式 CSS（Flexbox + 自定义属性），图标使用 Font Awesome。
-- **部署环境：** Cloudflare Workers。
+- **部署环境**：Cloudflare Workers（单文件架构，无需构建）
+- **渲染引擎**：原生 Canvas 2D API（多层画布：背景、纹理、粒子、墨韵）
+- **动画驱动**：GSAP 3 时间轴，精确控制阶段流转与缓动
+- **物理模拟**：自研粒子系统（含洛伦兹吸引子轨迹、烟雾扩散、漩涡场）
+- **UI 层**：响应式 CSS Flexbox，图标使用 Font Awesome
+- **色彩体系**：参考[中国色](https://zhongguose.com/)（极渊黑、朱砂、玄青、黄金、鸦青等）
 
 ---
 
-## 📁 项目架构 (Architecture)
+## 📁 项目结构
 
 ```
 Worker Script (index.js)
 ├── HTML 模板字符串
-│   ├── <style> (包含 CSS 变量、响应式布局、动画预设)
-│   ├── <canvas> 多层结构 (bg-canvas, particle-canvas, texture-canvas, ink-overlay)
-│   ├── <div id="ui-layer"> (Logo 画布、导航链接、社交图标、页脚)
+│   ├── <style> (CSS 变量、响应式布局)
+│   ├── <canvas> 分层 (bg, texture, particle, ink)
+│   ├── <div id="ui-layer"> (导航、社交、页脚)
 │   └── <script> (内嵌核心逻辑)
-│       ├── CONFIG 集中配置对象 (色彩、动画时长、粒子参数、外部链接)
-│       ├── Canvas 初始化与自适应
-│       ├── 粒子类 (Particle) 与物理更新
-│       ├── 洛伦兹轨迹更新
+│       ├── CONFIG 集中配置 (色彩、动画参数、外部链接)
+│       ├── 粒子类 (Particle / SmokeParticle)
+│       ├── 漩涡场与烟雾生成
 │       ├── GSAP 时间线编排
 │       └── 交互事件 (墨韵、音频、导航)
 ```
 
 ---
 
-## 🎞️ 动效细节与参数规范
+## ⚙️ 自定义配置
 
-| 阶段 | 关键参数 | 视觉表现 |
-|------|----------|----------|
-| 化生期 | `LORENZ_SIGMA=10, RHO=28, BETA=8/3` | 丝线呈混沌环绕，最终半径收敛至 0。 |
-| 金丹凝结 | `coreSize: 4 → 48` | 光球急速膨胀，伴随高强度辉光。 |
-| 大爆炸 | 粒子数 ~1200 | 阳粒子高速、阴粒子低速、金粒子向文字路径吸附。 |
-| 背景翻转 | `bgColor: #0a0a0f → #EEDEB0` | 1.8s 内平滑过渡，与粒子爆炸同步。 |
-| 文字固化 | `textSolidified = true` | 触发 Logo 画布绘制金色渐变文字，并带瞬时闪光。 |
-| UI 入场 | 导航 `y:15→0`，社交 `y:15→0` | 柔和上浮，配合墨韵交互。 |
+所有可调整项集中在代码开头的 `CONFIG` 对象与 CSS `:root` 中。
+
+### 1. 修改导航链接
+
+```javascript
+LINKS: {
+    blog: 'https://your-blog.com',          // 博客入口
+    classics: 'https://classics.com',       // 经典解析
+    about: 'https://about.me',              // 关于我
+    wechat: 'https://mp.weixin.qq.com/...', // 微信公众号
+    bilibili: 'https://space.bilibili.com/...',
+    email: 'mailto:your@email.com'
+}
+```
+
+### 2. 调整视觉色彩
+
+在 `:root` 中修改 CSS 变量：
+
+```css
+--color-void: #0a0a0f;   /* 混沌背景 */
+--color-paper: #F3F0E6;  /* 宣纸底色 */
+--color-yang: #FF461F;   /* 朱砂阳线 */
+--color-yin: #344352;    /* 玄青阴线 */
+--color-gold: #EACD76;   /* 金丹与文字金色 */
+--color-ink: #4A5B6E;    /* 最终文字色（鸦青） */
+```
+
+### 3. 调整动画节奏
+
+```javascript
+// 在 CONFIG 中修改
+PARTICLE_SPEED: { yang: 18, yin: 10, gold: 8 },
+SMOKE_PER_FRAME: 8,       // 烟雾浓度
+// 在 GSAP 时间线中修改各阶段 duration
+```
+
+### 4. 修改 Logo 文字
+
+```javascript
+MAIN_TEXT: '卜仙堂',
+FONT_SIZE: 72,
+```
 
 ---
 
-## 🚀 部署与配置
+## 🚀 部署指南
 
-### 1. 环境准备
+### 1. 安装 Wrangler
+
 ```bash
 npm install -g wrangler
 ```
 
-### 2. 本地预览
+### 2. 登录 Cloudflare
+
 ```bash
-wrangler dev
+wrangler login
 ```
 
-### 3. 发布至 Cloudflare Workers
+### 3. 创建 Worker 项目
+
+```bash
+wrangler init buxiantang
+cd buxiantang
+```
+
+### 4. 替换 `index.js` 内容
+
+将本项目的完整 Worker 代码粘贴至 `index.js`。
+
+### 5. 部署
+
 ```bash
 wrangler deploy
 ```
 
-### 4. 自定义链接与内容
-修改 Worker 代码顶部 `CONFIG` 对象中的 `LINKS` 字段即可替换所有导航与社交链接：
-```javascript
-LINKS: {
-    blog: 'https://blog.buxiantang.top',           // 博客入口
-    classics: 'https://anal.buxiantang.top/about',       // 经典解析
-    socials: 'https://blog.buxiantang.top/about',        // 关于我
-    wechat: 'https://mp.weixin.qq.com/mp/profile_ext?action=home&__biz=MzIwNzY4NDU3Nw==#wechat_redirect',         // 微信公众号
-    bilibili: 'https://space.bilibili.com/265656567',
-    email: 'mailto:tiengming@qq.com'
-}
-```
-颜色、粒子数量、动画时长等亦可在 `CONFIG` 与 CSS `:root` 中集中调整。
+部署完成后，访问 `https://your-worker-name.your-subdomain.workers.dev` 即可。
+
+> **提示**：由于所有资源均已内联或使用 CDN，Worker 脚本体积约 45KB，无需绑定 KV 或 R2。
 
 ---
 
@@ -121,8 +150,8 @@ LINKS: {
 
 ## 📜 许可与致谢
 
-本项目视觉设计灵感源自中国传统色彩体系（[中国色](https://zhongguose.com/)）及道家宇宙观。  
-代码实现为原创，可自由用于个人品牌展示。
+本项目视觉设计灵感源自中国传统色彩体系及道家宇宙观。  
+代码实现为原创，可自由用于个人品牌展示与二次开发。
 
 ---
 
