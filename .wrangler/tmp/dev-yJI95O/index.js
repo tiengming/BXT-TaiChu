@@ -47,13 +47,13 @@ var index_default = {
         }
 
         #bg-canvas { z-index: 1; }
-        #particle-canvas { z-index: 2; }
         #texture-canvas {
-            z-index: 3;
+            z-index: 2;
             pointer-events: none;
             mix-blend-mode: multiply;
-            opacity: 0.25;
+            opacity: 0.22;
         }
+        #particle-canvas { z-index: 3; }
         #ink-overlay {
             position: absolute; top: 0; left: 0;
             width: 100%; height: 100%;
@@ -79,7 +79,7 @@ var index_default = {
             justify-content: center;
             opacity: 0; pointer-events: none;
             margin-bottom: var(--content-gap);
-            margin-top: 120px; /* \u4E3A\u4E0A\u65B9\u7C92\u5B50 Logo \u7559\u51FA\u7A7A\u95F4 */
+            margin-top: 110px;
         }
 
         .nav-item {
@@ -152,7 +152,7 @@ var index_default = {
 
         @media (max-width: 600px) {
             .nav-item:not(:last-child)::after { font-size: 16px; }
-            .matrix-nav { margin-top: 80px; }
+            .matrix-nav { margin-top: 70px; }
         }
     </style>
 </head>
@@ -160,8 +160,8 @@ var index_default = {
 
 <div id="canvas-container">
     <canvas id="bg-canvas"></canvas>
-    <canvas id="particle-canvas"></canvas>
     <canvas id="texture-canvas"></canvas>
+    <canvas id="particle-canvas"></canvas>
     <canvas id="ink-overlay"></canvas>
 </div>
 
@@ -194,7 +194,7 @@ var index_default = {
         AUDIO: { freq: 42, dur: 2.5, vol: 0.02 },
         INK: { life: 0.9, radius: 2, prob: 0.25 },
         MAIN_TEXT: '\u535C\u4ED9\u5802',
-        FONT_BASE: 68,
+        FONT_BASE: 60,
         LINKS: {
             blog: 'https://blog.buxiantang.top', classics: 'https://anal.buxiantang.top/about', socials: 'https://blog.buxiantang.top/about',
             wechat: 'https://mp.weixin.qq.com/mp/profile_ext?action=home&__biz=MzIwNzY4NDU3Nw==#wechat_redirect', bilibili: 'https://space.bilibili.com/429714179', email: 'mailto:tiengming@qq.com'
@@ -289,7 +289,7 @@ var index_default = {
                     const tx = cx + this.target.nx * Math.min(w,h)*0.85;
                     const ty = cy + this.target.ny * Math.min(w,h)*0.4 - 100;
                     const dx=tx-this.x, dy=ty-this.y;
-                    if(Math.hypot(dx,dy)<2.5) { this.settled=true; this.vx=this.vy=0; }
+                    if(Math.hypot(dx,dy)<2.0) { this.settled=true; this.vx=this.vy=0; }
                     else { this.vx+=dx*0.022; this.vy+=dy*0.022; }
                 }
             }
@@ -401,6 +401,12 @@ var index_default = {
         cx=w/2; cy=h/2;
         generateTexture();
         computeTextPoints();
+        for(let p of particles) {
+            if(p.type === 2) {
+                p.settled = false;
+                p.target = textTargetPoints[Math.floor(Math.random()*textTargetPoints.length)];
+            }
+        }
     }
 
     window.addEventListener('resize', resize);
