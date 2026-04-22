@@ -18,7 +18,6 @@ export default {
             --color-gold: #EACD76;
             --color-amber: #CA6924;
             --color-ink: #232021;
-            --color-cyan: #425066;
             --color-footer: #4A3F3A;
 
             --content-gap: clamp(20px, 5vw, 40px);
@@ -43,15 +42,15 @@ export default {
             width: 100%; height: 100%;
         }
 
-        #bg-canvas { z-index: 1; }                /* 纯色背景 */
-        #particle-canvas { z-index: 2; }           /* 动态粒子 */
-        #texture-canvas {                          /* 宣纸纹理 */
+        #bg-canvas { z-index: 1; }
+        #particle-canvas { z-index: 2; }
+        #texture-canvas {
             z-index: 3;
             pointer-events: none;
             mix-blend-mode: multiply;
-            opacity: 0.22;
+            opacity: 0.25;
         }
-        #ink-overlay {                             /* 交互墨韵 */
+        #ink-overlay {
             position: absolute; top: 0; left: 0;
             width: 100%; height: 100%;
             pointer-events: none; z-index: 4;
@@ -70,32 +69,18 @@ export default {
             padding: 20px;
         }
 
-        .logo-wrapper {
-            margin-bottom: var(--content-gap);
-            width: 100%; display: flex; justify-content: center;
-        }
-
-        #logo-canvas {
-            width: min(400px, 80vw);
-            height: auto;
-            aspect-ratio: 360/140;
-            opacity: 0;
-            transition: opacity 1.2s ease;
-            filter: drop-shadow(4px 4px 12px rgba(0,0,0,0.1));
-            pointer-events: none;
-        }
-
         .matrix-nav {
             display: flex; flex-wrap: wrap;
             gap: var(--nav-gap);
             justify-content: center;
             opacity: 0; pointer-events: none;
             margin-bottom: var(--content-gap);
+            margin-top: 120px; /* 为上方粒子 Logo 留出空间 */
         }
 
         .nav-item {
             color: var(--color-ink);
-            font-size: clamp(18px, 5vw, 26px);
+            font-size: clamp(18px, 5vw, 24px);
             letter-spacing: clamp(4px, 2vw, 8px);
             padding: 8px 0;
             pointer-events: auto;
@@ -163,6 +148,7 @@ export default {
 
         @media (max-width: 600px) {
             .nav-item:not(:last-child)::after { font-size: 16px; }
+            .matrix-nav { margin-top: 80px; }
         }
     </style>
 </head>
@@ -176,9 +162,6 @@ export default {
 </div>
 
 <div id="ui-layer">
-    <div class="logo-wrapper">
-        <canvas id="logo-canvas" width="360" height="140"></canvas>
-    </div>
     <div class="matrix-nav">
         <a href="#" class="nav-item" id="nav-blog">博客入口</a>
         <a href="#" class="nav-item" id="nav-classics">经典解析</a>
@@ -197,25 +180,23 @@ export default {
 (function(){
     "use strict";
 
-    // ---------- 用户配置 ----------
     const CONFIG = {
         MAX_PARTICLES: 4000,
         PARTICLE_SPEED: { yang: 18, yin: 10, gold: 6 },
         DECAY: { min: 0.004, max: 0.012 },
-        TEXT_STEP: 2,
+        TEXT_STEP: 1,
         MAX_TRAIL: 45,
         LORENZ: { sigma: 10, rho: 28, beta: 8/3, dt: 0.012 },
         AUDIO: { freq: 42, dur: 2.5, vol: 0.02 },
         INK: { life: 0.9, radius: 2, prob: 0.25 },
         MAIN_TEXT: '卜仙堂',
-        FONT_BASE: 86,
+        FONT_BASE: 68,
         LINKS: {
             blog: 'https://blog.buxiantang.top', classics: 'https://anal.buxiantang.top/about', socials: 'https://blog.buxiantang.top/about',
             wechat: 'https://mp.weixin.qq.com/mp/profile_ext?action=home&__biz=MzIwNzY4NDU3Nw==#wechat_redirect', bilibili: 'https://space.bilibili.com/429714179', email: 'mailto:tiengming@qq.com'
         }
     };
 
-    // 应用链接
     document.getElementById('nav-blog').href = CONFIG.LINKS.blog;
     document.getElementById('nav-classics').href = CONFIG.LINKS.classics;
     document.getElementById('nav-socials').href = CONFIG.LINKS.socials;
@@ -223,23 +204,20 @@ export default {
     document.getElementById('social-bilibili').href = CONFIG.LINKS.bilibili;
     document.getElementById('social-email').href = CONFIG.LINKS.email;
 
-    // 画布引用
     const bgCanvas = document.getElementById('bg-canvas');
     const particleCanvas = document.getElementById('particle-canvas');
     const textureCanvas = document.getElementById('texture-canvas');
-    const logoCanvas = document.getElementById('logo-canvas');
     const inkCanvas = document.getElementById('ink-overlay');
     const bgCtx = bgCanvas.getContext('2d');
     const pCtx = particleCanvas.getContext('2d', { alpha: true });
     const texCtx = textureCanvas.getContext('2d');
-    const logoCtx = logoCanvas.getContext('2d');
     const inkCtx = inkCanvas.getContext('2d');
 
     let w, h, cx, cy;
 
     const COLORS = {
         void: '#0a0a0f', paper: '#EEDEB0', yang: '#FF461F', yin: '#425066',
-        gold: '#EACD76', amber: '#CA6924', cyan: '#425066'
+        gold: '#EACD76', amber: '#CA6924'
     };
 
     const sim = {
@@ -251,7 +229,6 @@ export default {
     const trails = { yang: [], yin: [] };
     let textTargetPoints = [];
 
-    // 纹理
     function generateTexture() {
         const tw = textureCanvas.width, th = textureCanvas.height;
         if (!tw || !th) return;
@@ -265,12 +242,11 @@ export default {
         texCtx.putImageData(img, 0, 0);
     }
 
-    // 文字点阵
     function computeTextPoints() {
-        const baseW = 360, baseH = 140;
+        const baseW = 400, baseH = 200;
         const off = new OffscreenCanvas(baseW, baseH);
         const octx = off.getContext('2d');
-        octx.font = "bold " + CONFIG.FONT_BASE + "px 'STKaiti', 'KaiTi', 'Noto Serif SC', serif";
+        octx.font = "italic " + CONFIG.FONT_BASE + "px 'Huayan Shoujin', 'STSong', 'FangSong', 'Songti SC', serif";
         octx.textAlign = "center"; octx.textBaseline = "middle";
         octx.fillStyle = "#fff";
         octx.fillText(CONFIG.MAIN_TEXT, baseW/2, baseH/2);
@@ -288,7 +264,6 @@ export default {
         textTargetPoints = pts;
     }
 
-    // 粒子类
     class Particle {
         constructor(x,y,type) {
             this.x=x; this.y=y; this.type=type;
@@ -296,7 +271,7 @@ export default {
             const s=type===0?CONFIG.PARTICLE_SPEED.yang:(type===1?CONFIG.PARTICLE_SPEED.yin:CONFIG.PARTICLE_SPEED.gold);
             this.vx=Math.cos(a)*s*(0.7+Math.random()*0.6);
             this.vy=Math.sin(a)*s*(0.7+Math.random()*0.6);
-            this.size=type===2?1.8:(2.2+Math.random()*2.5);
+            this.size=type===2?1.2:(2.2+Math.random()*2.5);
             this.life=1;
             this.decay=CONFIG.DECAY.min+Math.random()*(CONFIG.DECAY.max-CONFIG.DECAY.min);
             if(type===2){
@@ -307,14 +282,14 @@ export default {
         update() {
             if(this.type===2 && !this.settled) {
                 if(this.target) {
-                    const tx = cx + this.target.nx * Math.min(w,h)*0.76;
-                    const ty = cy + this.target.ny * Math.min(w,h)*0.32;
+                    const tx = cx + this.target.nx * Math.min(w,h)*0.85;
+                    const ty = cy + this.target.ny * Math.min(w,h)*0.4 - 100;
                     const dx=tx-this.x, dy=ty-this.y;
                     if(Math.hypot(dx,dy)<2.5) { this.settled=true; this.vx=this.vy=0; }
-                    else { this.vx+=dx*0.018; this.vy+=dy*0.018; }
+                    else { this.vx+=dx*0.022; this.vy+=dy*0.022; }
                 }
             }
-            this.vx*=0.955; this.vy*=0.955;
+            this.vx*=0.95; this.vy*=0.95;
             this.x+=this.vx; this.y+=this.vy;
             if(this.type!==2||!this.settled) this.life-=this.decay; else this.life=0.95;
         }
@@ -326,7 +301,7 @@ export default {
             ctx.beginPath();
             ctx.arc(this.x,this.y,this.size*(0.7+0.3*Math.sin(sim.time*4+this.x)),0,2*Math.PI);
             ctx.fill();
-            if(this.type===2){ ctx.shadowBlur=14; ctx.shadowColor=COLORS.amber; ctx.fill(); ctx.shadowBlur=0; }
+            if(this.type===2){ ctx.shadowBlur=10; ctx.shadowColor=COLORS.amber; ctx.fill(); ctx.shadowBlur=0; }
         }
     }
 
@@ -339,7 +314,6 @@ export default {
         trails.yin.push({x:cx-sim.ly*s*0.75, y:cy-sim.lx*s*0.75});
         if(trails.yang.length>CONFIG.MAX_TRAIL) trails.yang.shift();
         if(trails.yin.length>CONFIG.MAX_TRAIL) trails.yin.shift();
-        sim.orbitRadius=Math.hypot(sim.lx,sim.ly)*s;
     }
 
     function drawTrail(t, base, glow, blur) {
@@ -350,7 +324,6 @@ export default {
             pCtx.quadraticCurveTo(t[i-1].x,t[i-1].y,xc,yc);
         }
         pCtx.strokeStyle=base; pCtx.lineWidth=2.8; pCtx.shadowBlur=blur; pCtx.shadowColor=glow; pCtx.stroke();
-        pCtx.shadowBlur=blur*0.6; pCtx.lineWidth=1.2; pCtx.strokeStyle=glow; pCtx.stroke();
         pCtx.shadowBlur=0;
     }
 
@@ -366,25 +339,10 @@ export default {
         }
     }
 
-    function drawLogo() {
-        const cw=logoCanvas.width, ch=logoCanvas.height;
-        logoCtx.clearRect(0,0,cw,ch);
-        const fs=ch*0.62;
-        logoCtx.font="bold "+fs+"px 'STKaiti','KaiTi','Noto Serif SC',serif";
-        logoCtx.textAlign="center"; logoCtx.textBaseline="middle";
-        const grad=logoCtx.createLinearGradient(cw*0.15,0,cw*0.85,ch);
-        grad.addColorStop(0,COLORS.gold); grad.addColorStop(0.6,COLORS.amber);
-        logoCtx.fillStyle=grad; logoCtx.shadowBlur=ch*0.12; logoCtx.shadowColor=COLORS.amber;
-        logoCtx.fillText(CONFIG.MAIN_TEXT,cw/2,ch/2);
-        logoCtx.shadowBlur=0;
-    }
-
     function render() {
-        // 背景层绘制（确保每帧覆盖）
         bgCtx.fillStyle = sim.bgColor;
         bgCtx.fillRect(0, 0, w, h);
 
-        // 粒子层拖尾（半透明）
         pCtx.globalCompositeOperation = 'source-over';
         pCtx.fillStyle = sim.bgColor;
         pCtx.globalAlpha = sim.phase >= 3 ? 0.03 : 0.18;
@@ -397,7 +355,6 @@ export default {
             updateTrails();
             drawTrail(trails.yang, COLORS.yang, '#FF8A6F', 18);
             drawTrail(trails.yin, COLORS.yin, '#6A7A8C', 14);
-            // 端点光球...
         } else if (sim.phase >= 2) {
             if (sim.coreSize > 0) {
                 const grad = pCtx.createRadialGradient(cx,cy,0,cx,cy,sim.coreSize);
@@ -428,13 +385,7 @@ export default {
         tl.to(sim, { bgColor:COLORS.paper, duration:1.8 }, "-=0.3");
         tl.add(()=>{ sim.phase=3; }, "-=0.6");
         tl.add(()=>{ for(let i=0;i<1000;i++) particles.push(new Particle(cx,cy,2)); }, "+=0.3");
-        tl.add(()=>{
-            sim.textSolidified=true;
-            drawLogo();
-            logoCanvas.style.filter='drop-shadow(0 0 30px #EACD76)';
-            setTimeout(()=>logoCanvas.style.filter='',400);
-        }, "+=2.0");
-        tl.to(logoCanvas, { opacity:1, duration:1.5 }, "-=0.3");
+        tl.add(()=>{ sim.textSolidified=true; }, "+=2.0");
         tl.fromTo(".matrix-nav", { opacity:0, y:15 }, { opacity:1, y:0, duration:1.2, stagger:0.1 }, "-=1.0");
         tl.fromTo(".social-row", { opacity:0, y:15 }, { opacity:1, y:0, duration:1.2 }, "-=0.8");
         tl.to(".footer", { opacity:0.8, duration:1.8 }, "-=1.2");
@@ -446,18 +397,9 @@ export default {
         cx=w/2; cy=h/2;
         generateTexture();
         computeTextPoints();
-        const dpr=window.devicePixelRatio||1;
-        const displayW=logoCanvas.clientWidth, displayH=logoCanvas.clientHeight;
-        if(displayW&&displayH) {
-            logoCanvas.width=displayW*dpr; logoCanvas.height=displayH*dpr;
-            if(sim.textSolidified) drawLogo();
-        }
     }
 
-    window.addEventListener('resize', ()=>{
-        resize();
-        if(sim.textSolidified) drawLogo();
-    });
+    window.addEventListener('resize', resize);
     window.addEventListener('orientationchange', ()=>setTimeout(resize,30));
     resize();
 
@@ -467,7 +409,6 @@ export default {
         render();
     });
 
-    // 交互
     window.addEventListener('mousemove', (e)=>{
         if(sim.phase<3) return;
         const rect=particleCanvas.getBoundingClientRect();
