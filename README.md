@@ -45,21 +45,7 @@
 
 ## 📁 核心框架设计 (Framework Design)
 
-```text
-/buxiantang-portal
- ┣ 📜 wrangler.toml         # CF Workers 配置文件
- ┣ 📜 index.js              # Worker 入口逻辑（处理请求分发）
- ┣ 📜 template.html         # 核心 HTML 模板（包含 WebGL 渲染容器）
- ┣ 📂 src
- ┃ ┣ 📜 main.js             # 动画主程序 (Three.js 场景与逻辑)
- ┃ ┣ 📜 cosmogony.js        # 混沌开辟动效逻辑 (丝线运动、碰撞算法)
- ┃ ┣ 📜 styles.css          # 全局样式（包含中国传统色定义）
- ┃ ┗ 📜 portal-data.json    # 导航矩阵链接配置 (博客、解析、社媒)
- ┣ 📂 assets
- ┃ ┣ 📜 font.woff2          # 卜仙堂书法体字体文件
- ┃ ┗ 📜 texture.png         # 宣纸/水墨纹理贴图
- ┗ 📜 README.md
-```
+采用单文件架构
 
 ## 🎞️ 动效细节规范
 
