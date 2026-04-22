@@ -376,7 +376,7 @@ export default {
 
                 // 链式节点：用于形成水滴尾部
                 this.nodes = [];
-                const nodeCount = 20;
+                const nodeCount = 30;
                 for(let i=0; i<nodeCount; i++) {
                     this.nodes.push({ x: this.x, y: this.y, ox: 0, oy: 0 });
                 }
@@ -413,21 +413,29 @@ export default {
                 let prev = { x: this.x, y: this.y };
                 this.nodes.forEach((node, i) => {
                     // 1. 延迟跟随
-                    const lerpFactor = 0.3 * (1 - i / this.nodes.length * 0.4);
+                    const lerpFactor = 0.35 * (1 - i / this.nodes.length * 0.5);
                     node.x += (prev.x - node.x) * lerpFactor;
                     node.y += (prev.y - node.y) * lerpFactor;
 
-                    // 2. 正弦摆动
-                    const freq = 0.15;
-                    const amp = 3.0 * (i / this.nodes.length);
-                    const wave = Math.sin(sim.time * 8 + i * 0.5) * amp;
+                    // 2. 正弦摆动：频率随角速度动态调整，实现“气韵”同步
+                    const dynamicFreq = 5 + Math.abs(sim.angularSpeed) * 1.5;
+                    const amp = 3.5 * (i / this.nodes.length);
+                    const wave = Math.sin(sim.time * dynamicFreq + i * 0.6) * amp;
 
-                    // 计算法线方向进行偏移
+                    // 3. 离心滞后：在旋转时，尾部节点会因为“惯性”产生角度滞后，形成 S 形
+                    const distToCenter = Math.hypot(node.x - cx, node.y - cy);
+                    const lagAmount = Math.abs(sim.angularSpeed) * 0.015 * (i + 1);
+                    // 简单模拟：在偏移中增加一个切向分量
+                    const nodeTheta = Math.atan2(node.y - cy, node.x - cx);
+                    const lagX = Math.cos(nodeTheta + Math.PI/2) * lagAmount * distToCenter * 0.1;
+                    const lagY = Math.sin(nodeTheta + Math.PI/2) * lagAmount * distToCenter * 0.1;
+
+                    // 计算法线方向进行摆动偏移
                     const dx = node.x - prev.x;
                     const dy = node.y - prev.y;
                     const len = Math.hypot(dx, dy) || 1;
-                    node.ox = (-dy / len) * wave;
-                    node.oy = (dx / len) * wave;
+                    node.ox = (-dy / len) * wave + (sim.angularSpeed > 0 ? lagX : -lagX);
+                    node.oy = (dx / len) * wave + (sim.angularSpeed > 0 ? lagY : -lagY);
 
                     prev = node;
                 });
@@ -444,10 +452,11 @@ export default {
                     const node = this.nodes[i];
                     const ratio = 1 - i / this.nodes.length;
                     const size = this.size * (0.3 + 0.7 * ratio);
-                    const nodeAlpha = alpha * ratio * 0.7;
+                    const nodeAlpha = alpha * ratio * 0.8;
 
-                    const grad = ctx.createRadialGradient(node.x + node.ox, node.y + node.oy, 0, node.x + node.ox, node.y + node.oy, size * 1.5);
-                    grad.addColorStop(0, this.color + 'A0');
+                    const grad = ctx.createRadialGradient(node.x + node.ox, node.y + node.oy, 0, node.x + node.ox, node.y + node.oy, size * 1.8);
+                    grad.addColorStop(0, this.color + 'C0');
+                    grad.addColorStop(0.4, this.color + '40');
                     grad.addColorStop(1, this.color + '00');
 
                     ctx.fillStyle = grad;
@@ -628,8 +637,8 @@ export default {
         // 阶段2：开始急速收缩并形成逆时针漩涡
         tl.to(sim, {
             orbitRadius: 2,
-            angularSpeed: -6.5,
-            vortexStrength: -8.5,
+            angularSpeed: -7.5,
+            vortexStrength: -10.5,
             duration: 4.5,
             ease: "power2.in"
         }, 1.5);
