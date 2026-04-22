@@ -1,6 +1,4 @@
-export default {
-  async fetch(request, env, ctx) {
-    const html = `<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
@@ -310,8 +308,8 @@ export default {
         const d = img.data;
         for (let i=0; i<d.length; i+=4) {
             const x = (i/4)%tw, y = Math.floor(i/4/tw);
-            const v = Math.floor(((Math.sin(x*0.02)*Math.cos(y*0.02) + 
-                                   Math.sin(x*0.05+1)*Math.cos(y*0.05)*0.5 + 
+            const v = Math.floor(((Math.sin(x*0.02)*Math.cos(y*0.02) +
+                                   Math.sin(x*0.05+1)*Math.cos(y*0.05)*0.5 +
                                    Math.sin(x*0.1)*Math.cos(y*0.1)*0.2)*0.5+0.5)*20);
             d[i]=d[i+1]=d[i+2]=v; d[i+3]=255;
         }
@@ -325,22 +323,22 @@ export default {
         const r = Math.hypot(dx, dy);
         if (r < 0.1) return;
         const theta = Math.atan2(dy, dx);
-        
+
         // 向心加速度：使当前半径趋向目标半径
         const ar = (sim.orbitRadius - r) * 0.03;
-        
+
         // 切向加速度：维持目标角速度
         const targetVtheta = sim.angularSpeed * r;
         const currentVtheta = -p.vx * Math.sin(theta) + p.vy * Math.cos(theta);
         const aTheta = (targetVtheta - currentVtheta) * 0.04;
-        
+
         // 漩涡增强（额外切向力）
         const extraATheta = sim.vortexStrength * r * 0.015;
-        
+
         // 合成加速度
         const ax = ar * Math.cos(theta) - (aTheta + extraATheta) * Math.sin(theta);
         const ay = ar * Math.sin(theta) + (aTheta + extraATheta) * Math.cos(theta);
-        
+
         p.vx += ax;
         p.vy += ay;
     }
@@ -447,7 +445,7 @@ export default {
         const headYang = heads.find(p => p.color === COLORS.yang);
         const headYin = heads.find(p => p.color === COLORS.yin);
         if (!headYang || !headYin) return;
-        
+
         for (let i=0; i<CONFIG.SMOKE_PER_FRAME/2; i++) {
             const s1 = new Particle('smoke');
             s1.initSmoke(headYang.x, headYang.y, headYang.vx, headYang.vy, COLORS.yang);
@@ -530,11 +528,11 @@ export default {
         sim.orbitRadius = Math.min(w, h) * 0.55;
         sim.angularSpeed = 0;
         sim.vortexStrength = 0;
-        
+
         // 创建头部粒子
         particles.push(new Particle('yang'));
         particles.push(new Particle('yin'));
-        
+
         const tl = gsap.timeline({
             onUpdate: function() {
                 const prog = this.progress();
@@ -554,7 +552,7 @@ export default {
             duration: 2.8,
             ease: "power2.inOut"
         }, 0);
-        
+
         // 阶段2：开始急速收缩并形成逆时针漩涡
         tl.to(sim, {
             orbitRadius: 4,
@@ -563,14 +561,14 @@ export default {
             duration: 3.8,
             ease: "power2.in"
         }, 1.2);
-        
+
         // 白点凝聚
         tl.to(sim, {
             whitePointSize: 32,
             duration: CONFIG.TIMING.whitePoint,
             ease: "expo.out"
         }, "-=0.3");
-        
+
         // 头部淡出
         tl.to({}, {
             duration: 0.3,
@@ -578,7 +576,7 @@ export default {
                 particles.forEach(p => { if (p.isHead) p.life *= 0.85; });
             }
         }, "-=0.2");
-        
+
         // 爆炸
         tl.add(() => {
             sim.phase = 2;
@@ -589,12 +587,12 @@ export default {
                 bangParticles.push(new BangParticle(cx, cy));
             }
         }, "+=0.1");
-        
+
         // UI 入场
         tl.fromTo(".matrix-nav", { opacity:0, y:10 }, { opacity:1, y:0, duration:1.0, stagger:0.1 }, "+=0.9");
         tl.fromTo(".social-row", { opacity:0, y:10 }, { opacity:1, y:0, duration:1.0 }, "-=0.6");
         tl.to(".footer", { opacity:0.7, duration:1.5 }, "-=1.0");
-        
+
         tl.add(() => {
             phaseHint.style.opacity = '0';
             skipBtn.style.opacity = '0';
@@ -622,7 +620,4 @@ export default {
 })();
 </script>
 </body>
-</html>`;
-    return new Response(html, { headers: { "content-type": "text/html;charset=UTF-8" } });
-  }
-};
+</html>
