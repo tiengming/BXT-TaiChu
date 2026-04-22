@@ -6,6 +6,8 @@ export default {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>卜仙堂 · 道生万象</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="https://svg.buxiantang.top/images/originFavicon.svg">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
@@ -48,6 +50,7 @@ export default {
         #particle-canvas { z-index: 3; }
         #ink-overlay { z-index: 4; pointer-events: none; }
 
+        /* UI 层 */
         #ui-layer {
             position: absolute; top: 0; left: 0;
             width: 100%; height: 100%;
@@ -133,6 +136,55 @@ export default {
             transition: opacity 1.5s;
         }
 
+        /* 进度条 */
+        #progress-bar-container {
+            position: absolute; bottom: 0; left: 0;
+            width: 100%; height: 2px;
+            background: transparent;
+            z-index: 150;
+            pointer-events: none;
+        }
+        #progress-bar {
+            width: 0%; height: 100%;
+            background: var(--color-gold);
+            box-shadow: 0 0 8px var(--color-gold);
+            transition: width 0.05s linear;
+        }
+
+        /* 阶段文字提示 */
+        #phase-hint {
+            position: absolute; bottom: 20px; left: 20px;
+            color: var(--color-amber);
+            font-size: 13px;
+            opacity: 0.5;
+            z-index: 151;
+            pointer-events: none;
+            letter-spacing: 2px;
+        }
+
+        /* 跳过按钮 */
+        #skip-btn {
+            position: absolute; bottom: 20px; right: 20px;
+            color: var(--color-amber);
+            font-size: 14px;
+            opacity: 0.5;
+            z-index: 200;
+            cursor: pointer;
+            pointer-events: auto;
+            background: rgba(10,10,15,0.3);
+            padding: 6px 14px;
+            border-radius: 30px;
+            backdrop-filter: blur(4px);
+            border: 0.5px solid rgba(234,205,118,0.3);
+            transition: all 0.2s;
+            letter-spacing: 1px;
+        }
+        #skip-btn:hover {
+            opacity: 0.9;
+            background: rgba(234,205,118,0.15);
+            border-color: var(--color-gold);
+        }
+
         #audio-prompt {
             position: absolute; bottom: 20px; left: 20px;
             color: var(--color-amber); font-size: 12px;
@@ -142,6 +194,7 @@ export default {
         @media (max-width: 600px) {
             .nav-item:not(:last-child)::after { font-size: 18px; }
             #ui-layer { padding-top: 50vh; }
+            #skip-btn { padding: 4px 10px; font-size: 12px; }
         }
     </style>
 </head>
@@ -153,6 +206,11 @@ export default {
     <canvas id="particle-canvas"></canvas>
     <canvas id="ink-overlay"></canvas>
 </div>
+
+<!-- 进度条与提示 -->
+<div id="progress-bar-container"><div id="progress-bar"></div></div>
+<div id="phase-hint">⚲ 混沌 · 孕育</div>
+<div id="skip-btn">⏭ 跳过</div>
 
 <div id="ui-layer">
     <div class="matrix-nav">
@@ -167,12 +225,13 @@ export default {
     </div>
     <div class="footer"><span>© 卜仙堂 · 道隐无名</span></div>
 </div>
-<div id="audio-prompt">⚲ 轻触闻道</div>
+<div id="audio-prompt" style="display:none;">⚲ 轻触闻道</div>
 
 <script>
 (function(){
     "use strict";
 
+    // ---------- 用户配置（可调节时长）----------
     const CONFIG = {
         MAX_PARTICLES: 4500,
         PARTICLE_SPEED: { yang: 18, yin: 10, gold: 8 },
@@ -183,12 +242,19 @@ export default {
         INK: { life: 0.9, radius: 2, prob: 0.25 },
         MAIN_TEXT: '卜仙堂',
         FONT_SIZE: 72,
+        TIMING: {
+            chaos: 0.6,      // 混沌期
+            spiral: 3.8,     // 化生期
+            bang: 1.1,       // 爆发期
+            crystal: 2.0     // 凝结期
+        },
         LINKS: {
-            blog: 'https://blog.buxiantang.top/', classics: 'https://anal.buxiantang.top/about', about: 'https://blog.buxiantang.top/about',
-            wechat: 'https://mp.weixin.qq.com/mp/profile_ext?action=home&__biz=MzIwNzY4NDU3Nw==#wechat_redirect', bilibili: 'https://space.bilibili.com/265656567', email: 'mailto:tiengming@qq.com'
+            blog: '#', classics: '#', about: '#',
+            wechat: '#', bilibili: '#', email: '#'
         }
     };
 
+    // 应用链接
     document.getElementById('nav-blog').href = CONFIG.LINKS.blog;
     document.getElementById('nav-classics').href = CONFIG.LINKS.classics;
     document.getElementById('nav-about').href = CONFIG.LINKS.about;
@@ -206,6 +272,7 @@ export default {
     const inkCtx = inkCanvas.getContext('2d');
 
     let w, h, cx, cy;
+    let animationTimeline;
 
     const COLORS = {
         void: '#0a0a0f', paper: '#F3F0E6',
@@ -225,6 +292,32 @@ export default {
     const smokeParticles = [];
     let textTargetPoints = [];
 
+    const phaseHint = document.getElementById('phase-hint');
+    const progressBar = document.getElementById('progress-bar');
+    const skipBtn = document.getElementById('skip-btn');
+
+    // 跳过功能
+    function skipAnimation() {
+        if (animationTimeline) {
+            animationTimeline.seek(99);
+            animationTimeline.kill();
+        }
+        sim.phase = 4;
+        sim.textAlpha = 1;
+        sim.bgColor = COLORS.paper;
+        particles.length = 0;
+        smokeParticles.length = 0;
+        phaseHint.style.opacity = '0';
+        progressBar.style.width = '100%';
+        document.querySelector('.matrix-nav').style.opacity = '1';
+        document.querySelector('.social-row').style.opacity = '1';
+        document.querySelector('.footer').style.opacity = '0.7';
+        skipBtn.style.opacity = '0';
+        skipBtn.style.pointerEvents = 'none';
+    }
+    skipBtn.addEventListener('click', skipAnimation);
+
+    // 纹理生成
     function generateTexture() {
         const tw = textureCanvas.width, th = textureCanvas.height;
         if (!tw || !th) return;
@@ -411,45 +504,16 @@ export default {
         }
     }
 
-    // 东方水墨阴影文字
+    // 清晰文字（无阴影）
     function drawSolidText() {
         if(sim.phase !== 4) return;
         const fontSize = Math.min(w, h) * 0.12;
         pCtx.font = "bold " + fontSize + "px 'STKaiti', 'KaiTi', 'Songti SC', serif";
         pCtx.textAlign = "center"; pCtx.textBaseline = "middle";
-        const tx = cx;
-        const ty = cy * 0.65;
-
-        // 第一层：最模糊、最淡的阴影（远处晕染）
         pCtx.fillStyle = COLORS.text;
-        pCtx.globalAlpha = sim.textAlpha * 0.15;
-        pCtx.shadowColor = COLORS.text;
-        pCtx.shadowBlur = 35;
-        pCtx.shadowOffsetX = 6;
-        pCtx.shadowOffsetY = 8;
-        pCtx.fillText(CONFIG.MAIN_TEXT, tx, ty);
-
-        // 第二层：中等模糊阴影
-        pCtx.globalAlpha = sim.textAlpha * 0.25;
-        pCtx.shadowBlur = 20;
-        pCtx.shadowOffsetX = 3;
-        pCtx.shadowOffsetY = 4;
-        pCtx.fillText(CONFIG.MAIN_TEXT, tx, ty);
-
-        // 第三层：轻微模糊阴影
-        pCtx.globalAlpha = sim.textAlpha * 0.5;
-        pCtx.shadowBlur = 8;
-        pCtx.shadowOffsetX = 1;
-        pCtx.shadowOffsetY = 2;
-        pCtx.fillText(CONFIG.MAIN_TEXT, tx, ty);
-
-        // 第四层：文字本体（无阴影）
-        pCtx.shadowBlur = 0;
-        pCtx.shadowOffsetX = 0;
-        pCtx.shadowOffsetY = 0;
         pCtx.globalAlpha = sim.textAlpha;
-        pCtx.fillStyle = COLORS.text;
-        pCtx.fillText(CONFIG.MAIN_TEXT, tx, ty);
+        pCtx.fillText(CONFIG.MAIN_TEXT, cx, cy * 0.65);
+        pCtx.globalAlpha = 1.0;
     }
 
     const inkDrops=[];
@@ -467,13 +531,11 @@ export default {
     function render() {
         bgCtx.fillStyle = sim.bgColor;
         bgCtx.fillRect(0, 0, w, h);
-
         pCtx.globalCompositeOperation = 'source-over';
         pCtx.fillStyle = sim.bgColor;
         pCtx.globalAlpha = sim.phase >= 3 ? 0.05 : 0.12;
         pCtx.fillRect(0, 0, w, h);
         pCtx.globalAlpha = 1.0;
-
         sim.time += 0.018;
 
         emitSmoke();
@@ -500,49 +562,60 @@ export default {
     }
 
     function startAnim() {
-        const tl = gsap.timeline({ delay:0.3 });
-        
+        const tl = gsap.timeline({
+            delay: 0.3,
+            onUpdate: function() {
+                const prog = this.progress();
+                progressBar.style.width = (prog * 100) + '%';
+                // 更新阶段提示
+                if (prog < 0.1) phaseHint.innerHTML = '⚲ 混沌 · 孕育';
+                else if (prog < 0.55) phaseHint.innerHTML = '⚲ 化生 · 阴阳交融';
+                else if (prog < 0.8) phaseHint.innerHTML = '⚲ 开辟 · 金丹大爆炸';
+                else phaseHint.innerHTML = '⚲ 真名 · 卜仙堂显现';
+            }
+        });
+        animationTimeline = tl;
+
         tl.set(sim, { phase:0, bgColor:COLORS.void });
-        tl.to({}, { duration: 1.0 });
+        tl.to({}, { duration: CONFIG.TIMING.chaos });
 
         tl.add(() => { sim.phase = 1; sim.vortexStrength = 0; });
         tl.fromTo(sim.yangPos, 
             { x: cx, y: -100 }, 
-            { x: cx, y: cy * 0.7, duration: 4.0, ease: "power2.inOut" }, 0);
+            { x: cx, y: cy * 0.7, duration: CONFIG.TIMING.spiral, ease: "power2.inOut" }, 0);
         tl.fromTo(sim.yinPos, 
             { x: cx, y: h + 100 }, 
-            { x: cx, y: cy * 1.3, duration: 4.0, ease: "power2.inOut" }, 0);
+            { x: cx, y: cy * 1.3, duration: CONFIG.TIMING.spiral, ease: "power2.inOut" }, 0);
         
-        // 飞入后半程开启漩涡
-        tl.to(sim, { vortexStrength: 1.2, duration: 2.5, ease: "power2.in" }, "+=1.5");
+        tl.to(sim, { vortexStrength: 1.2, duration: CONFIG.TIMING.spiral * 0.6, ease: "power2.in" }, "-=1.8");
+        tl.to({}, { duration: 0.4 }); // 蓄力
         
-        // 漩涡蓄力，让能量充分卷入
-        tl.to({}, { duration: 0.6 });
-        
-        // 金丹出现（伴随生长动画）
-        tl.add(() => { 
-            sim.phase = 2; 
-            smokeParticles.length = 0;
-            sim.coreSize = 5;
-        });
-        tl.to(sim, { coreSize: 60, duration: 0.35, ease: "expo.out" });
+        tl.add(() => { sim.phase = 2; smokeParticles.length = 0; sim.coreSize = 5; });
+        tl.to(sim, { coreSize: 60, duration: CONFIG.TIMING.bang * 0.3, ease: "expo.out" });
         tl.add(() => { for(let i=0;i<1500;i++) particles.push(new Particle(cx, cy, i%3)); });
-        tl.to(sim, { coreSize: 0, duration: 0.5, ease: "power2.in" });
-        tl.to(sim, { bgColor: COLORS.paper, duration: 1.8 }, "-=0.3");
+        tl.to(sim, { coreSize: 0, duration: CONFIG.TIMING.bang * 0.5, ease: "power2.in" });
+        tl.to(sim, { bgColor: COLORS.paper, duration: CONFIG.TIMING.bang * 0.4 }, "-=0.2");
         
-        tl.add(() => { sim.phase = 3; }, "-=0.5");
+        tl.add(() => { sim.phase = 3; }, "-=0.3");
         tl.add(() => { for(let i=0;i<900;i++) particles.push(new Particle(cx, cy, 2)); }, "+=0.2");
         
-        tl.to({}, { duration: 2.5 });
+        tl.to({}, { duration: CONFIG.TIMING.crystal * 0.7 });
         tl.add(() => {
             sim.phase = 4;
             particles.length = 0;
-            gsap.to(sim, { textAlpha: 1, duration: 1.5, ease: "power2.out" });
+            gsap.to(sim, { textAlpha: 1, duration: CONFIG.TIMING.crystal * 0.4, ease: "power2.out" });
         });
         
-        tl.fromTo(".matrix-nav", { opacity:0, y:10 }, { opacity:1, y:0, duration:1.0, stagger:0.1 }, "-=1.2");
+        tl.fromTo(".matrix-nav", { opacity:0, y:10 }, { opacity:1, y:0, duration:1.0, stagger:0.1 }, "-=1.0");
         tl.fromTo(".social-row", { opacity:0, y:10 }, { opacity:1, y:0, duration:1.0 }, "-=0.8");
         tl.to(".footer", { opacity:0.7, duration:1.5 }, "-=1.2");
+        
+        tl.add(() => {
+            phaseHint.style.opacity = '0';
+            skipBtn.style.opacity = '0';
+            skipBtn.style.pointerEvents = 'none';
+            progressBar.style.opacity = '0';
+        }, "+=0.5");
     }
 
     function resize() {
@@ -586,7 +659,6 @@ export default {
                 osc.connect(gain).connect(ctx.destination);
                 osc.start(); osc.stop(ctx.currentTime+CONFIG.AUDIO.dur);
             }
-            document.getElementById('audio-prompt').style.opacity='0';
         }
         const rect=particleCanvas.getBoundingClientRect();
         for(let i=0;i<4;i++) inkDrops.push({x:e.clientX-rect.left, y:e.clientY-rect.top, radius:4, life:1});
