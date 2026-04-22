@@ -102,7 +102,7 @@ LINKS: {
     classics: 'https://anal.buxiantang.top/about',       // 经典解析
     socials: 'https://blog.buxiantang.top/about',        // 关于我
     wechat: 'https://mp.weixin.qq.com/mp/profile_ext?action=home&__biz=MzIwNzY4NDU3Nw==#wechat_redirect',         // 微信公众号
-    bilibili: '[https://space.bilibili.com/429714179](https://space.bilibili.com/265656567)',
+    bilibili: 'https://space.bilibili.com/265656567',
     email: 'mailto:tiengming@qq.com'
 }
 ```
