@@ -14,7 +14,7 @@ export default {
             --color-void: #0a0a0f;
             --color-paper: #EEDEB0;
             --color-yang: #FF461F;
-            --color-yin: #425066;
+            --color-yin: #344352;
             --color-gold: #EACD76;
             --color-amber: #CA6924;
             --color-ink: #232021;
@@ -47,7 +47,7 @@ export default {
             z-index: 2;
             pointer-events: none;
             mix-blend-mode: multiply;
-            opacity: 0.22;
+            opacity: 0.15;
         }
         #particle-canvas { z-index: 3; }
         #ink-overlay {
@@ -75,7 +75,7 @@ export default {
             justify-content: center;
             opacity: 0; pointer-events: none;
             margin-bottom: var(--content-gap);
-            margin-top: 110px;
+            margin-top: 100px;
         }
 
         .nav-item {
@@ -148,7 +148,7 @@ export default {
 
         @media (max-width: 600px) {
             .nav-item:not(:last-child)::after { font-size: 16px; }
-            .matrix-nav { margin-top: 70px; }
+            .matrix-nav { margin-top: 60px; }
         }
     </style>
 </head>
@@ -190,7 +190,7 @@ export default {
         AUDIO: { freq: 42, dur: 2.5, vol: 0.02 },
         INK: { life: 0.9, radius: 2, prob: 0.25 },
         MAIN_TEXT: '卜仙堂',
-        FONT_BASE: 60,
+        FONT_BASE: 52,
         LINKS: {
             blog: 'https://blog.buxiantang.top', classics: 'https://anal.buxiantang.top/about', socials: 'https://blog.buxiantang.top/about',
             wechat: 'https://mp.weixin.qq.com/mp/profile_ext?action=home&__biz=MzIwNzY4NDU3Nw==#wechat_redirect', bilibili: 'https://space.bilibili.com/429714179', email: 'mailto:tiengming@qq.com'
@@ -216,7 +216,7 @@ export default {
     let w, h, cx, cy;
 
     const COLORS = {
-        void: '#0a0a0f', paper: '#EEDEB0', yang: '#FF461F', yin: '#425066',
+        void: '#0a0a0f', paper: '#EEDEB0', yang: '#FF461F', yin: '#344352',
         gold: '#EACD76', amber: '#CA6924'
     };
 
@@ -282,7 +282,7 @@ export default {
         update() {
             if(this.type===2 && !this.settled) {
                 if(this.target) {
-                    const tx = cx + this.target.nx * Math.min(w,h)*0.85;
+                    const tx = cx + this.target.nx * Math.min(w,h)*0.82;
                     const ty = cy + this.target.ny * Math.min(w,h)*0.4 - 100;
                     const dx=tx-this.x, dy=ty-this.y;
                     if(Math.hypot(dx,dy)<2.0) { this.settled=true; this.vx=this.vy=0; }
@@ -291,7 +291,15 @@ export default {
             }
             this.vx*=0.95; this.vy*=0.95;
             this.x+=this.vx; this.y+=this.vy;
-            if(this.type!==2||!this.settled) this.life-=this.decay; else this.life=0.95;
+
+            // Phase 3 之后加快非文字粒子的消失
+            if(sim.phase >= 3 && this.type !== 2) {
+                this.life -= 0.05;
+            } else if(this.type!==2||!this.settled) {
+                this.life-=this.decay;
+            } else {
+                this.life=0.95;
+            }
         }
         draw(ctx) {
             if(this.life<=0.01) return;
