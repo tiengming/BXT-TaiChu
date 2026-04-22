@@ -243,7 +243,7 @@ export default {
         MAIN_TEXT: '卜仙堂',
         FONT_SIZE: 72,
         TIMING: {
-            chaos: 0.6,      // 混沌期
+            chaos: 0.05,      // 混沌期
             spiral: 3.8,     // 化生期
             bang: 1.1,       // 爆发期
             crystal: 2.0     // 凝结期
