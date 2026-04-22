@@ -272,7 +272,8 @@ export default {
         angularSpeed: 0,
         vortexStrength: 0,
         whitePointSize: 0,
-        textAlpha: 0
+        textAlpha: 0,
+        phi: -Math.PI / 2,
     };
 
     const particles = [];
@@ -326,20 +327,33 @@ export default {
         if (r < 0.1) return;
         const theta = Math.atan2(dy, dx);
         
-        // 向心加速度：使当前半径趋向目标半径
-        const ar = (sim.orbitRadius - r) * 0.03;
+        // 1. 向心力：向目标半径收拢
+        const ar = (sim.orbitRadius - r) * 0.05;
         
-        // 切向加速度：维持目标角速度
+        // 2. 切向力：基础旋转
         const targetVtheta = sim.angularSpeed * r;
         const currentVtheta = -p.vx * Math.sin(theta) + p.vy * Math.cos(theta);
-        const aTheta = (targetVtheta - currentVtheta) * 0.04;
+        let aTheta = (targetVtheta - currentVtheta) * 0.06;
+
+        // 3. 锁相力：让粒子归位到太极的两瓣
+        // 阳（红色）目标角 phi，阴（黑色）目标角 phi + PI
+        if (p.color === COLORS.yang || p.color === COLORS.yin) {
+            const targetPhi = (p.color === COLORS.yang) ? sim.phi : sim.phi + Math.PI;
+            // 计算角度差并归一化到 [-PI, PI]
+            let diff = targetPhi - theta;
+            while (diff > Math.PI) diff -= Math.PI * 2;
+            while (diff < -Math.PI) diff += Math.PI * 2;
+            // 施加纠偏力
+            aTheta += diff * r * 0.08;
+        }
         
-        // 漩涡增强（额外切向力）
-        const extraATheta = sim.vortexStrength * r * 0.015;
+        // 4. 漩涡增强
+        const extraATheta = sim.vortexStrength * r * 0.02;
         
-        // 合成加速度
-        const ax = ar * Math.cos(theta) - (aTheta + extraATheta) * Math.sin(theta);
-        const ay = ar * Math.sin(theta) + (aTheta + extraATheta) * Math.cos(theta);
+        // 合成总加速度
+        const totalATheta = aTheta + extraATheta;
+        const ax = ar * Math.cos(theta) - totalATheta * Math.sin(theta);
+        const ay = ar * Math.sin(theta) + totalATheta * Math.cos(theta);
         
         p.vx += ax;
         p.vy += ay;
@@ -495,6 +509,7 @@ export default {
         pCtx.globalAlpha = 1.0;
         sim.time += 0.018;
 
+        sim.phi += sim.angularSpeed * 0.018;
         emitSmoke();
         for (let i=particles.length-1; i>=0; i--) {
             const p = particles[i];
@@ -531,6 +546,7 @@ export default {
         sim.angularSpeed = 0;
         sim.vortexStrength = 0;
         
+        sim.phi = -Math.PI / 2;
         // 创建头部粒子
         particles.push(new Particle('yang'));
         particles.push(new Particle('yin'));
