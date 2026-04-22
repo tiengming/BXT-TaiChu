@@ -218,7 +218,7 @@ export default {
     "use strict";
 
     const CONFIG = {
-        SMOKE_PER_FRAME: 16,
+        SMOKE_PER_FRAME: 6,
         BANG_PARTICLES: 2000,
         MAIN_TEXT: '卜仙堂',
         FONT_SIZE: 72,
@@ -328,12 +328,12 @@ export default {
         const theta = Math.atan2(dy, dx);
         
         // 1. 向心力：向目标半径收拢
-        const ar = (sim.orbitRadius - r) * 0.05;
+        const ar = (sim.orbitRadius - r) * 0.065;
         
         // 2. 切向力：基础旋转
         const targetVtheta = sim.angularSpeed * r;
         const currentVtheta = -p.vx * Math.sin(theta) + p.vy * Math.cos(theta);
-        let aTheta = (targetVtheta - currentVtheta) * 0.06;
+        let aTheta = (targetVtheta - currentVtheta) * 0.08;
 
         // 3. 锁相力：让粒子归位到太极的两瓣
         // 阳（红色）目标角 phi，阴（黑色）目标角 phi + PI
@@ -344,7 +344,7 @@ export default {
             while (diff > Math.PI) diff -= Math.PI * 2;
             while (diff < -Math.PI) diff += Math.PI * 2;
             // 施加纠偏力
-            aTheta += diff * r * 0.08;
+            aTheta += diff * r * 0.12;
         }
         
         // 4. 漩涡增强
@@ -362,44 +362,44 @@ export default {
     class Particle {
         constructor(type) {
             this.type = type; // 'yang', 'yin', 'smoke'
-            // 初始位置：红丝从顶部附近开始，黑丝从底部附近开始，烟雾稍后由头部生成
-            if (type === 'yang') {
-                const angle = -Math.PI/2;
+            this.isHead = (type === 'yang' || type === 'yin');
+
+            if (this.isHead) {
+                const angle = (type === 'yang') ? -Math.PI/2 : Math.PI/2;
                 const r = Math.min(w, h) * 0.9;
                 this.x = cx + Math.cos(angle) * r;
                 this.y = cy + Math.sin(angle) * r;
                 this.vx = 0; this.vy = 0;
-                this.size = 12;
+                this.size = 14;
                 this.life = 2.5;
-                this.color = COLORS.yang;
-                this.isHead = true;
-            } else if (type === 'yin') {
-                const angle = Math.PI/2;
-                const r = Math.min(w, h) * 0.9;
-                this.x = cx + Math.cos(angle) * r;
-                this.y = cy + Math.sin(angle) * r;
-                this.vx = 0; this.vy = 0;
-                this.size = 12;
-                this.life = 2.5;
-                this.color = COLORS.yin;
-                this.isHead = true;
+                this.color = (type === 'yang') ? COLORS.yang : COLORS.yin;
+
+                // 链式节点：用于形成水滴尾部
+                this.nodes = [];
+                const nodeCount = 20;
+                for(let i=0; i<nodeCount; i++) {
+                    this.nodes.push({ x: this.x, y: this.y, ox: 0, oy: 0 });
+                }
             } else {
-                this.x = 0; this.y = 0; // 临时，稍后由头部赋值
+                this.x = 0; this.y = 0;
                 this.vx = 0; this.vy = 0;
-                this.size = 12 + Math.random() * 20;
-                this.life = 1.0 + Math.random() * 0.8;
+                this.size = 8 + Math.random() * 12;
+                this.life = 0.8 + Math.random() * 0.6;
                 this.color = '';
+                this.nodes = [];
                 this.isHead = false;
             }
-            this.decay = this.isHead ? 0.002 : (0.002 + Math.random() * 0.004);
+            this.decay = this.isHead ? 0.001 : (0.005 + Math.random() * 0.01);
         }
+
         initSmoke(headX, headY, headVx, headVy, color) {
-            this.x = headX + (Math.random()-0.5)*20;
-            this.y = headY + (Math.random()-0.5)*20;
-            this.vx = headVx + (Math.random()-0.5)*1.5;
-            this.vy = headVy + (Math.random()-0.5)*1.5;
+            this.x = headX + (Math.random()-0.5)*15;
+            this.y = headY + (Math.random()-0.5)*15;
+            this.vx = headVx * 0.5 + (Math.random()-0.5)*2;
+            this.vy = headVy * 0.5 + (Math.random()-0.5)*2;
             this.color = color;
         }
+
         update() {
             applySpiralField(this);
             this.vx *= 0.985;
@@ -407,19 +407,73 @@ export default {
             this.x += this.vx;
             this.y += this.vy;
             this.life -= this.decay;
+
+            if (this.isHead && this.nodes.length > 0) {
+                // 更新链式跟随节点
+                let prev = { x: this.x, y: this.y };
+                this.nodes.forEach((node, i) => {
+                    // 1. 延迟跟随
+                    const lerpFactor = 0.3 * (1 - i / this.nodes.length * 0.4);
+                    node.x += (prev.x - node.x) * lerpFactor;
+                    node.y += (prev.y - node.y) * lerpFactor;
+
+                    // 2. 正弦摆动
+                    const freq = 0.15;
+                    const amp = 3.0 * (i / this.nodes.length);
+                    const wave = Math.sin(sim.time * 8 + i * 0.5) * amp;
+
+                    // 计算法线方向进行偏移
+                    const dx = node.x - prev.x;
+                    const dy = node.y - prev.y;
+                    const len = Math.hypot(dx, dy) || 1;
+                    node.ox = (-dy / len) * wave;
+                    node.oy = (dx / len) * wave;
+
+                    prev = node;
+                });
+            }
         }
+
         draw(ctx) {
             if (this.life <= 0) return;
-            const alpha = Math.min(this.life, 1.0) * (this.isHead ? 1.0 : 0.5);
-            const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.size);
-            gradient.addColorStop(0, this.color + (this.isHead ? 'FF' : 'C0'));
-            gradient.addColorStop(0.5, this.color + (this.isHead ? '80' : '40'));
-            gradient.addColorStop(1, this.color + '00');
-            ctx.fillStyle = gradient;
-            ctx.globalAlpha = alpha;
-            ctx.beginPath();
-            ctx.arc(this.x, this.y, this.size * (this.isHead ? 1.2 : 1.0), 0, Math.PI * 2);
-            ctx.fill();
+            const alpha = Math.min(this.life, 1.0);
+
+            if (this.isHead) {
+                // 绘制尾部
+                for (let i = this.nodes.length - 1; i >= 0; i--) {
+                    const node = this.nodes[i];
+                    const ratio = 1 - i / this.nodes.length;
+                    const size = this.size * (0.3 + 0.7 * ratio);
+                    const nodeAlpha = alpha * ratio * 0.7;
+
+                    const grad = ctx.createRadialGradient(node.x + node.ox, node.y + node.oy, 0, node.x + node.ox, node.y + node.oy, size * 1.5);
+                    grad.addColorStop(0, this.color + 'A0');
+                    grad.addColorStop(1, this.color + '00');
+
+                    ctx.fillStyle = grad;
+                    ctx.globalAlpha = nodeAlpha;
+                    ctx.beginPath();
+                    ctx.arc(node.x + node.ox, node.y + node.oy, size, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                // 绘制头部
+                const headGrad = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.size * 1.5);
+                headGrad.addColorStop(0, this.color + 'FF');
+                headGrad.addColorStop(0.5, this.color + '80');
+                headGrad.addColorStop(1, this.color + '00');
+                ctx.fillStyle = headGrad;
+                ctx.globalAlpha = alpha;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size * 1.2, 0, Math.PI * 2);
+                ctx.fill();
+            } else {
+                ctx.globalAlpha = alpha * 0.3;
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
         }
     }
 
@@ -542,7 +596,7 @@ export default {
 
     function startAnim() {
         // 初始参数：大半径、零角速度、零漩涡
-        sim.orbitRadius = Math.min(w, h) * 0.55;
+        sim.orbitRadius = Math.min(w, h) * 0.65;
         sim.angularSpeed = 0;
         sim.vortexStrength = 0;
         
@@ -565,20 +619,20 @@ export default {
 
         // 阶段1：主要是竖直飞入，半径收缩，开始缓慢逆时针旋转
         tl.to(sim, {
-            orbitRadius: Math.min(w, h) * 0.3,
-            angularSpeed: -0.8,
-            duration: 2.8,
+            orbitRadius: Math.min(w, h) * 0.28,
+            angularSpeed: -0.5,
+            duration: 3.2,
             ease: "power2.inOut"
         }, 0);
         
         // 阶段2：开始急速收缩并形成逆时针漩涡
         tl.to(sim, {
-            orbitRadius: 4,
-            angularSpeed: -5.5,
-            vortexStrength: -6.5,
-            duration: 3.8,
+            orbitRadius: 2,
+            angularSpeed: -6.5,
+            vortexStrength: -8.5,
+            duration: 4.5,
             ease: "power2.in"
-        }, 1.2);
+        }, 1.5);
         
         // 白点凝聚
         tl.to(sim, {
