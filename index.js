@@ -455,7 +455,7 @@ export default {
                 // 当轨道半径很小时，添加抖动预示
                 if (sim.orbitRadius < 30) {
                     const shake = 2 * (1 - sim.orbitRadius/30);
-                    particleCanvas.style.transform = `translate(${Math.random()*shake-shake/2}px, ${Math.random()*shake-shake/2}px)`;
+                    particleCanvas.style.transform = `translate(\${Math.random()*shake-shake/2}px, \${Math.random()*shake-shake/2}px)`;
                 } else {
                     particleCanvas.style.transform = '';
                 }
