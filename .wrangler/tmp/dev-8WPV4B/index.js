@@ -1,15 +1,19 @@
-export default {
+var __defProp = Object.defineProperty;
+var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
+
+// index.js
+var index_default = {
   async fetch(request, env, ctx) {
     const html = `<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>卜仙堂 · 道生万象</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <title>\u535C\u4ED9\u5802 \xB7 \u9053\u751F\u4E07\u8C61</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"><\/script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
-        /* ===== 用户配置区 ===== */
+        /* ===== \u7528\u6237\u914D\u7F6E\u533A ===== */
         :root {
             --color-void: #0a0a0f;
             --color-paper: #EEDEB0;
@@ -43,21 +47,21 @@ export default {
             width: 100%; height: 100%;
         }
 
-        #bg-canvas { z-index: 1; }                /* 纯色背景 */
-        #particle-canvas { z-index: 2; }           /* 动态粒子 */
-        #texture-canvas {                          /* 宣纸纹理 */
+        #bg-canvas { z-index: 1; }                /* \u7EAF\u8272\u80CC\u666F */
+        #particle-canvas { z-index: 2; }           /* \u52A8\u6001\u7C92\u5B50 */
+        #texture-canvas {                          /* \u5BA3\u7EB8\u7EB9\u7406 */
             z-index: 3;
             pointer-events: none;
             mix-blend-mode: multiply;
             opacity: 0.22;
         }
-        #ink-overlay {                             /* 交互墨韵 */
+        #ink-overlay {                             /* \u4EA4\u4E92\u58A8\u97F5 */
             position: absolute; top: 0; left: 0;
             width: 100%; height: 100%;
             pointer-events: none; z-index: 4;
         }
 
-        /* UI 层：最高层级 */
+        /* UI \u5C42\uFF1A\u6700\u9AD8\u5C42\u7EA7 */
         #ui-layer {
             position: absolute; top: 0; left: 0;
             width: 100%; height: 100%;
@@ -109,7 +113,7 @@ export default {
         }
 
         .nav-item:not(:last-child)::after {
-            content: '·';
+            content: '\xB7';
             position: absolute;
             right: calc(-1 * var(--nav-gap) / 2);
             top: 50%;
@@ -180,24 +184,24 @@ export default {
         <canvas id="logo-canvas" width="360" height="140"></canvas>
     </div>
     <div class="matrix-nav">
-        <a href="#" class="nav-item" id="nav-blog">博客入口</a>
-        <a href="#" class="nav-item" id="nav-classics">经典解析</a>
-        <a href="#" class="nav-item" id="nav-socials">关于我</a>
+        <a href="#" class="nav-item" id="nav-blog">\u535A\u5BA2\u5165\u53E3</a>
+        <a href="#" class="nav-item" id="nav-classics">\u7ECF\u5178\u89E3\u6790</a>
+        <a href="#" class="nav-item" id="nav-socials">\u5173\u4E8E\u6211</a>
     </div>
     <div class="social-row">
         <a href="#" class="social-icon" id="social-wechat" target="_blank"><i class="fab fa-weixin"></i></a>
         <a href="#" class="social-icon" id="social-bilibili" target="_blank"><i class="fab fa-bilibili"></i></a>
         <a href="#" class="social-icon" id="social-email" target="_blank"><i class="fas fa-envelope"></i></a>
     </div>
-    <div class="footer"><span>© 卜仙堂 · 道隐无名</span></div>
+    <div class="footer"><span>\xA9 \u535C\u4ED9\u5802 \xB7 \u9053\u9690\u65E0\u540D</span></div>
 </div>
-<div id="audio-prompt">⚲ 轻触闻道</div>
+<div id="audio-prompt">\u26B2 \u8F7B\u89E6\u95FB\u9053</div>
 
 <script>
 (function(){
     "use strict";
 
-    // ---------- 用户配置 ----------
+    // ---------- \u7528\u6237\u914D\u7F6E ----------
     const CONFIG = {
         MAX_PARTICLES: 4000,
         PARTICLE_SPEED: { yang: 18, yin: 10, gold: 6 },
@@ -207,7 +211,7 @@ export default {
         LORENZ: { sigma: 10, rho: 28, beta: 8/3, dt: 0.012 },
         AUDIO: { freq: 42, dur: 2.5, vol: 0.02 },
         INK: { life: 0.9, radius: 2, prob: 0.25 },
-        MAIN_TEXT: '卜仙堂',
+        MAIN_TEXT: '\u535C\u4ED9\u5802',
         FONT_BASE: 86,
         LINKS: {
             blog: 'https://blog.buxiantang.top', classics: 'https://anal.buxiantang.top/about', socials: 'https://blog.buxiantang.top/about',
@@ -215,7 +219,7 @@ export default {
         }
     };
 
-    // 应用链接
+    // \u5E94\u7528\u94FE\u63A5
     document.getElementById('nav-blog').href = CONFIG.LINKS.blog;
     document.getElementById('nav-classics').href = CONFIG.LINKS.classics;
     document.getElementById('nav-socials').href = CONFIG.LINKS.socials;
@@ -223,7 +227,7 @@ export default {
     document.getElementById('social-bilibili').href = CONFIG.LINKS.bilibili;
     document.getElementById('social-email').href = CONFIG.LINKS.email;
 
-    // 画布引用
+    // \u753B\u5E03\u5F15\u7528
     const bgCanvas = document.getElementById('bg-canvas');
     const particleCanvas = document.getElementById('particle-canvas');
     const textureCanvas = document.getElementById('texture-canvas');
@@ -251,7 +255,7 @@ export default {
     const trails = { yang: [], yin: [] };
     let textTargetPoints = [];
 
-    // 纹理
+    // \u7EB9\u7406
     function generateTexture() {
         const tw = textureCanvas.width, th = textureCanvas.height;
         if (!tw || !th) return;
@@ -265,7 +269,7 @@ export default {
         texCtx.putImageData(img, 0, 0);
     }
 
-    // 文字点阵
+    // \u6587\u5B57\u70B9\u9635
     function computeTextPoints() {
         const baseW = 360, baseH = 140;
         const off = new OffscreenCanvas(baseW, baseH);
@@ -288,7 +292,7 @@ export default {
         textTargetPoints = pts;
     }
 
-    // 粒子类
+    // \u7C92\u5B50\u7C7B
     class Particle {
         constructor(x,y,type) {
             this.x=x; this.y=y; this.type=type;
@@ -380,11 +384,11 @@ export default {
     }
 
     function render() {
-        // 背景层绘制（确保每帧覆盖）
+        // \u80CC\u666F\u5C42\u7ED8\u5236\uFF08\u786E\u4FDD\u6BCF\u5E27\u8986\u76D6\uFF09
         bgCtx.fillStyle = sim.bgColor;
         bgCtx.fillRect(0, 0, w, h);
 
-        // 粒子层拖尾（半透明）
+        // \u7C92\u5B50\u5C42\u62D6\u5C3E\uFF08\u534A\u900F\u660E\uFF09
         pCtx.globalCompositeOperation = 'source-over';
         pCtx.fillStyle = sim.bgColor;
         pCtx.globalAlpha = sim.phase >= 3 ? 0.03 : 0.18;
@@ -397,7 +401,7 @@ export default {
             updateTrails();
             drawTrail(trails.yang, COLORS.yang, '#FF8A6F', 18);
             drawTrail(trails.yin, COLORS.yin, '#6A7A8C', 14);
-            // 端点光球...
+            // \u7AEF\u70B9\u5149\u7403...
         } else if (sim.phase >= 2) {
             if (sim.coreSize > 0) {
                 const grad = pCtx.createRadialGradient(cx,cy,0,cx,cy,sim.coreSize);
@@ -467,7 +471,7 @@ export default {
         render();
     });
 
-    // 交互
+    // \u4EA4\u4E92
     window.addEventListener('mousemove', (e)=>{
         if(sim.phase<3) return;
         const rect=particleCanvas.getBoundingClientRect();
@@ -498,9 +502,184 @@ export default {
     });
 
 })();
-</script>
+<\/script>
 </body>
 </html>`;
     return new Response(html, { headers: { "content-type": "text/html;charset=UTF-8" } });
   }
 };
+
+// ../home/jules/.npm/_npx/32026684e21afda6/node_modules/wrangler/templates/middleware/middleware-ensure-req-body-drained.ts
+var drainBody = /* @__PURE__ */ __name(async (request, env, _ctx, middlewareCtx) => {
+  try {
+    return await middlewareCtx.next(request, env);
+  } finally {
+    try {
+      if (request.body !== null && !request.bodyUsed) {
+        const reader = request.body.getReader();
+        while (!(await reader.read()).done) {
+        }
+      }
+    } catch (e) {
+      console.error("Failed to drain the unused request body.", e);
+    }
+  }
+}, "drainBody");
+var middleware_ensure_req_body_drained_default = drainBody;
+
+// ../home/jules/.npm/_npx/32026684e21afda6/node_modules/wrangler/templates/middleware/middleware-miniflare3-json-error.ts
+function reduceError(e) {
+  return {
+    name: e?.name,
+    message: e?.message ?? String(e),
+    stack: e?.stack,
+    cause: e?.cause === void 0 ? void 0 : reduceError(e.cause)
+  };
+}
+__name(reduceError, "reduceError");
+var jsonError = /* @__PURE__ */ __name(async (request, env, _ctx, middlewareCtx) => {
+  try {
+    return await middlewareCtx.next(request, env);
+  } catch (e) {
+    const error = reduceError(e);
+    return Response.json(error, {
+      status: 500,
+      headers: { "MF-Experimental-Error-Stack": "true" }
+    });
+  }
+}, "jsonError");
+var middleware_miniflare3_json_error_default = jsonError;
+
+// .wrangler/tmp/bundle-F2aQF8/middleware-insertion-facade.js
+var __INTERNAL_WRANGLER_MIDDLEWARE__ = [
+  middleware_ensure_req_body_drained_default,
+  middleware_miniflare3_json_error_default
+];
+var middleware_insertion_facade_default = index_default;
+
+// ../home/jules/.npm/_npx/32026684e21afda6/node_modules/wrangler/templates/middleware/common.ts
+var __facade_middleware__ = [];
+function __facade_register__(...args) {
+  __facade_middleware__.push(...args.flat());
+}
+__name(__facade_register__, "__facade_register__");
+function __facade_invokeChain__(request, env, ctx, dispatch, middlewareChain) {
+  const [head, ...tail] = middlewareChain;
+  const middlewareCtx = {
+    dispatch,
+    next(newRequest, newEnv) {
+      return __facade_invokeChain__(newRequest, newEnv, ctx, dispatch, tail);
+    }
+  };
+  return head(request, env, ctx, middlewareCtx);
+}
+__name(__facade_invokeChain__, "__facade_invokeChain__");
+function __facade_invoke__(request, env, ctx, dispatch, finalMiddleware) {
+  return __facade_invokeChain__(request, env, ctx, dispatch, [
+    ...__facade_middleware__,
+    finalMiddleware
+  ]);
+}
+__name(__facade_invoke__, "__facade_invoke__");
+
+// .wrangler/tmp/bundle-F2aQF8/middleware-loader.entry.ts
+var __Facade_ScheduledController__ = class ___Facade_ScheduledController__ {
+  constructor(scheduledTime, cron, noRetry) {
+    this.scheduledTime = scheduledTime;
+    this.cron = cron;
+    this.#noRetry = noRetry;
+  }
+  static {
+    __name(this, "__Facade_ScheduledController__");
+  }
+  #noRetry;
+  noRetry() {
+    if (!(this instanceof ___Facade_ScheduledController__)) {
+      throw new TypeError("Illegal invocation");
+    }
+    this.#noRetry();
+  }
+};
+function wrapExportedHandler(worker) {
+  if (__INTERNAL_WRANGLER_MIDDLEWARE__ === void 0 || __INTERNAL_WRANGLER_MIDDLEWARE__.length === 0) {
+    return worker;
+  }
+  for (const middleware of __INTERNAL_WRANGLER_MIDDLEWARE__) {
+    __facade_register__(middleware);
+  }
+  const fetchDispatcher = /* @__PURE__ */ __name(function(request, env, ctx) {
+    if (worker.fetch === void 0) {
+      throw new Error("Handler does not export a fetch() function.");
+    }
+    return worker.fetch(request, env, ctx);
+  }, "fetchDispatcher");
+  return {
+    ...worker,
+    fetch(request, env, ctx) {
+      const dispatcher = /* @__PURE__ */ __name(function(type, init) {
+        if (type === "scheduled" && worker.scheduled !== void 0) {
+          const controller = new __Facade_ScheduledController__(
+            Date.now(),
+            init.cron ?? "",
+            () => {
+            }
+          );
+          return worker.scheduled(controller, env, ctx);
+        }
+      }, "dispatcher");
+      return __facade_invoke__(request, env, ctx, dispatcher, fetchDispatcher);
+    }
+  };
+}
+__name(wrapExportedHandler, "wrapExportedHandler");
+function wrapWorkerEntrypoint(klass) {
+  if (__INTERNAL_WRANGLER_MIDDLEWARE__ === void 0 || __INTERNAL_WRANGLER_MIDDLEWARE__.length === 0) {
+    return klass;
+  }
+  for (const middleware of __INTERNAL_WRANGLER_MIDDLEWARE__) {
+    __facade_register__(middleware);
+  }
+  return class extends klass {
+    #fetchDispatcher = /* @__PURE__ */ __name((request, env, ctx) => {
+      this.env = env;
+      this.ctx = ctx;
+      if (super.fetch === void 0) {
+        throw new Error("Entrypoint class does not define a fetch() function.");
+      }
+      return super.fetch(request);
+    }, "#fetchDispatcher");
+    #dispatcher = /* @__PURE__ */ __name((type, init) => {
+      if (type === "scheduled" && super.scheduled !== void 0) {
+        const controller = new __Facade_ScheduledController__(
+          Date.now(),
+          init.cron ?? "",
+          () => {
+          }
+        );
+        return super.scheduled(controller);
+      }
+    }, "#dispatcher");
+    fetch(request) {
+      return __facade_invoke__(
+        request,
+        this.env,
+        this.ctx,
+        this.#dispatcher,
+        this.#fetchDispatcher
+      );
+    }
+  };
+}
+__name(wrapWorkerEntrypoint, "wrapWorkerEntrypoint");
+var WRAPPED_ENTRY;
+if (typeof middleware_insertion_facade_default === "object") {
+  WRAPPED_ENTRY = wrapExportedHandler(middleware_insertion_facade_default);
+} else if (typeof middleware_insertion_facade_default === "function") {
+  WRAPPED_ENTRY = wrapWorkerEntrypoint(middleware_insertion_facade_default);
+}
+var middleware_loader_entry_default = WRAPPED_ENTRY;
+export {
+  __INTERNAL_WRANGLER_MIDDLEWARE__,
+  middleware_loader_entry_default as default
+};
+//# sourceMappingURL=index.js.map
