@@ -17,12 +17,12 @@ export default {
         :root {
             /* 色彩配置 (参考中国色 zhongguose.com) */
             --color-void: #0a0a0f;      /* 极渊黑 (混沌) */
-            --color-paper: #F1F1F1;      /* 缟羽 (宣纸) */
+            --color-paper: #EEDEB0;      /* 牙色 (宣纸/黄白) */
             --color-yang: #FF461F;       /* 朱砂 (阳) */
             --color-yin: #232021;        /* 玄青 (阴) */
             --color-gold: #EACD76;       /* 金 (凝结) */
             --color-amber: #CA6924;      /* 琥珀 (点缀) */
-            --color-ink: #50616D;        /* 墨色 (文字) */
+            --color-ink: #232021;        /* 玄青 (文字主色) */
             --color-cyan: #425066;       /* 黛蓝 (阴线发光) */
             --color-ivory: #EEDEB0;      /* 牙色 (纹理暖调) */
 
@@ -32,13 +32,8 @@ export default {
             --dur-bang: 0.6s;
             --dur-crystallize: 2.2s;
 
-            /* 布局偏移量 (可调) */
-            --logo-top: 8vh;
-            --logo-left: 5vw;
-            --nav-right: 6vw;
-            --nav-top: 10vh;
-            --footer-bottom: 2vh;
-            --footer-right: 6vw;
+            /* 布局偏移量 (垂直居中) */
+            --content-gap: 2.5rem;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -59,21 +54,29 @@ export default {
             width: 100%; height: 100%;
         }
 
-        #bg-canvas { z-index: 1; }
-        #particle-canvas { z-index: 2; }
+        #bg-canvas { 
+            z-index: 1; 
+            /* 背景层：纯色背景，随sim.bgColor变化 */
+        }
+        #particle-canvas { 
+            z-index: 2; 
+            /* 粒子层：所有动态视觉（丝线、金丹、粒子、墨韵） */
+        }
         #texture-canvas {
             z-index: 3;
             pointer-events: none;
             mix-blend-mode: multiply;
             opacity: 0.22;
+            /* 宣纸纹理层 */
         }
         #ink-overlay {
             position: absolute; top: 0; left: 0;
             width: 100%; height: 100%;
             pointer-events: none; z-index: 4;
+            /* 交互墨韵层 */
         }
 
-        /* ===== 三层气脉布局 (东方章法) ===== */
+        /* ===== UI 层：垂直居中布局 ===== */
         #ui-layer {
             position: absolute;
             top: 0; left: 0;
@@ -82,18 +85,15 @@ export default {
             pointer-events: none;
             display: flex;
             flex-direction: column;
-            justify-content: flex-start;
-            padding: 5% 0;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
             box-sizing: border-box;
         }
 
-        /* 第一层：主峰 Logo —— 左偏上 */
         .logo-wrapper {
-            position: relative;
-            align-self: flex-start;
-            margin-top: var(--logo-top);
-            margin-left: var(--logo-left);
             pointer-events: none;
+            margin-bottom: var(--content-gap);
         }
 
         #logo-canvas {
@@ -101,21 +101,20 @@ export default {
             height: auto;
             aspect-ratio: 360/140;
             opacity: 0;
-            transition: opacity 1.5s cubic-bezier(0.2, 0.9, 0.3, 1);
-            filter: drop-shadow(8px 8px 16px rgba(0,0,0,0.08));
+            transition: opacity 1.2s ease;
+            filter: drop-shadow(4px 4px 12px rgba(0,0,0,0.1));
             pointer-events: none;
         }
 
-        /* 第二层：案几导航 —— 右下方，与Logo形成对角 */
+        /* 导航矩阵 - 垂直排列，实际为横向flex */
         .matrix-nav {
-            position: relative;
-            align-self: flex-end;
-            margin-top: var(--nav-top);
-            margin-right: var(--nav-right);
             display: flex;
-            gap: 2.8rem;
+            gap: 3rem;
+            justify-content: center;
+            align-items: center;
             opacity: 0;
             pointer-events: none;
+            margin-bottom: var(--content-gap);
         }
 
         .nav-item {
@@ -123,12 +122,13 @@ export default {
             text-decoration: none;
             font-size: clamp(18px, 5vw, 24px);
             letter-spacing: 8px;
-            padding-bottom: 12px;
+            padding: 8px 0;
             pointer-events: auto;
-            opacity: 0.7;
+            opacity: 0.8;
             cursor: pointer;
-            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
             position: relative;
+            text-shadow: 1px 1px 2px rgba(255,255,240,0.8);
         }
 
         /* 界画分隔 (墨点) */
@@ -140,54 +140,54 @@ export default {
             transform: translateY(-50%);
             color: var(--color-amber);
             font-size: 20px;
-            opacity: 0.4;
+            opacity: 0.5;
         }
 
         .nav-item:hover {
             color: var(--color-yang);
             opacity: 1;
-            transform: translateX(4px);
+            transform: translateY(-3px);
+            text-shadow: 0 2px 8px rgba(255,70,31,0.2);
         }
 
-        /* 第三层：印章落款 —— 右下角 */
+        /* 社交媒体图标行 */
         .social-row {
-            position: absolute;
-            bottom: 8vh;
-            right: var(--footer-right);
             display: flex;
-            gap: 24px;
+            gap: 32px;
+            justify-content: center;
+            align-items: center;
             opacity: 0;
             pointer-events: none;
+            margin-bottom: calc(var(--content-gap) * 0.8);
         }
 
         .social-icon {
             color: var(--color-amber);
-            font-size: 26px;
+            font-size: 28px;
             pointer-events: auto;
             cursor: pointer;
             transition: all 0.3s;
-            opacity: 0.6;
+            opacity: 0.75;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
         }
 
         .social-icon:hover {
             color: var(--color-yang);
             opacity: 1;
-            transform: translateY(-4px);
+            transform: scale(1.1) translateY(-3px);
             filter: drop-shadow(0 0 12px var(--color-yang));
         }
 
-        /* 页脚小字 (落款) */
+        /* 页脚小字 */
         .footer {
-            position: absolute;
-            bottom: var(--footer-bottom);
-            right: var(--footer-right);
             color: var(--color-ink);
-            font-size: 11px;
+            font-size: 12px;
             letter-spacing: 4px;
             opacity: 0;
-            text-align: right;
+            text-align: center;
             pointer-events: none;
             transition: opacity 1.5s;
+            text-shadow: 1px 1px 2px rgba(255,255,240,0.6);
         }
 
         /* 音频提示 */
@@ -214,24 +214,26 @@ export default {
 </div>
 
 <div id="ui-layer">
-    <!-- 第一层：Logo 左上方 -->
+    <!-- Logo 文字 (Canvas绘制，初始透明) -->
     <div class="logo-wrapper">
         <canvas id="logo-canvas" width="360" height="140"></canvas>
     </div>
 
-    <!-- 第二层：导航右下方 -->
+    <!-- 导航栏 -->
     <div class="matrix-nav">
         <a href="#blog" class="nav-item">博客入口</a>
         <a href="#classics" class="nav-item">经典解析</a>
         <a href="#socials" class="nav-item">社交媒体</a>
     </div>
 
-    <!-- 第三层：社交与页脚右下角 -->
+    <!-- 社交媒体图标 -->
     <div class="social-row">
         <a href="#" class="social-icon" title="微信公众号"><i class="fab fa-weixin"></i></a>
         <a href="#" class="social-icon" title="Bilibili"><i class="fab fa-bilibili"></i></a>
         <a href="#" class="social-icon" title="电子邮箱"><i class="fas fa-envelope"></i></a>
     </div>
+
+    <!-- 页脚 -->
     <div class="footer">
         <span>© 卜仙堂 · 道隐无名</span>
     </div>
@@ -293,15 +295,15 @@ export default {
 
     let w, h, cx, cy;
 
-    // ---------- 中国色 (从CSS变量读取，也可硬编码) ----------
+    // ---------- 中国色 ----------
     const COLORS = {
         void: '#0a0a0f',
-        paper: '#F1F1F1',
+        paper: '#EEDEB0',      // 牙色黄白
         yang: '#FF461F',
         yin: '#232021',
         gold: '#EACD76',
         amber: '#CA6924',
-        ink: '#50616D',
+        ink: '#232021',
         cyan: '#425066',
         ivory: '#EEDEB0'
     };
@@ -321,7 +323,7 @@ export default {
     const trails = { yang: [], yin: [] };
     let textTargetPoints = [];
 
-    // ---------- 宣纸纹理生成 (使用噪声) ----------
+    // ---------- 宣纸纹理生成 ----------
     function generateTexture() {
         const tw = textureCanvas.width, th = textureCanvas.height;
         if (tw === 0 || th === 0) return;
@@ -333,7 +335,7 @@ export default {
             const value = (Math.sin(x * 0.02) * Math.cos(y * 0.02) + 
                           Math.sin(x * 0.05 + 1) * Math.cos(y * 0.05) * 0.5 + 
                           Math.sin(x * 0.1) * Math.cos(y * 0.1) * 0.2) * 0.5 + 0.5;
-            const v = Math.floor(value * 35);
+            const v = Math.floor(value * 30);  // 淡纹理
             data[i] = data[i+1] = data[i+2] = v;
             data[i+3] = 255;
         }
@@ -428,7 +430,7 @@ export default {
             ctx.globalAlpha = this.life * (this.type === 1 ? 0.8 : 1.0);
             let color;
             if (this.type === 0) color = COLORS.yang;
-            else if (this.type === 1) color = COLORS.cyan;  // 阴线用黛蓝提亮
+            else if (this.type === 1) color = COLORS.cyan;
             else color = COLORS.gold;
             
             ctx.fillStyle = color;
@@ -464,7 +466,6 @@ export default {
         sim.orbitRadius = Math.hypot(sim.lx, sim.ly) * scale;
     }
 
-    // 绘制发光丝线
     function drawTrail(trail, baseColor, glowColor, blur) {
         if (trail.length < 2) return;
         pCtx.beginPath();
@@ -479,7 +480,6 @@ export default {
         pCtx.shadowBlur = blur;
         pCtx.shadowColor = glowColor;
         pCtx.stroke();
-        // 第二层描边增强可见性
         pCtx.shadowBlur = blur * 0.6;
         pCtx.lineWidth = 1.2;
         pCtx.strokeStyle = glowColor;
@@ -497,8 +497,8 @@ export default {
             d.life -= 0.015;
             if (d.life <= 0) { inkDrops.splice(i,1); continue; }
             const gradient = inkCtx.createRadialGradient(d.x, d.y, 0, d.x, d.y, d.radius);
-            gradient.addColorStop(0, 'rgba(80,97,109,'+ d.life*0.25 +')');
-            gradient.addColorStop(1, 'rgba(80,97,109,0)');
+            gradient.addColorStop(0, 'rgba(35,32,33,'+ d.life*0.2 +')');
+            gradient.addColorStop(1, 'rgba(35,32,33,0)');
             inkCtx.fillStyle = gradient;
             inkCtx.beginPath();
             inkCtx.arc(d.x, d.y, d.radius, 0, 2*Math.PI);
@@ -520,12 +520,11 @@ export default {
         sim.time += 0.018;
 
         if (sim.phase === 0) {
-            // 混沌期仅背景
+            // 混沌期
         } else if (sim.phase === 1) {
             updateTrails();
             drawTrail(trails.yang, COLORS.yang, '#FF8A6F', 18);
             drawTrail(trails.yin, COLORS.cyan, '#6A7A8C', 14);
-            // 绘制端点光球
             if (trails.yang.length) {
                 const p = trails.yang[trails.yang.length-1];
                 pCtx.beginPath();
@@ -544,7 +543,7 @@ export default {
             }
             pCtx.shadowBlur = 0;
         } else if (sim.phase >= 2) {
-            // 金丹
+            // 金丹（仅在爆发期绘制，且coreSize>0时）
             if (sim.coreSize > 0) {
                 const gradient = pCtx.createRadialGradient(cx, cy, 0, cx, cy, sim.coreSize);
                 gradient.addColorStop(0, COLORS.gold);
@@ -556,7 +555,7 @@ export default {
                 pCtx.fill();
                 pCtx.shadowBlur = 0;
             }
-            // 粒子更新与绘制
+            // 粒子更新
             for (let i = particles.length - 1; i >= 0; i--) {
                 const p = particles[i];
                 p.update();
@@ -565,7 +564,7 @@ export default {
             }
         }
 
-        // 若文字已固化，绘制实体书法字
+        // 文字固化后，在logoCanvas上绘制实体书法字
         if (sim.textSolidified) {
             logoCtx.clearRect(0, 0, 360, 140);
             logoCtx.font = CONFIG.FONT;
@@ -615,6 +614,7 @@ export default {
             setTimeout(() => document.body.style.backgroundColor = '', 60);
         });
         tl.to(sim, { coreSize: 0, duration: 0.55, ease: "power2.in" });
+        // 背景切换为牙色
         tl.to(sim, { bgColor: COLORS.paper, duration: 1.8 }, "-=0.3");
         
         // 文字凝结期
@@ -623,19 +623,27 @@ export default {
             for (let i=0; i<1200; i++) particles.push(new Particle(cx, cy, 2));
         }, "+=0.3");
         
-        // 文字固化触发
+        // 文字固化 (金丹演化完成，金丹消失，文字显现)
         tl.add(() => {
             sim.textSolidified = true;
             logoCanvas.style.transition = 'filter 0.8s';
             logoCanvas.style.filter = 'drop-shadow(0 0 30px #EACD76)';
-            setTimeout(() => logoCanvas.style.filter = 'drop-shadow(8px 8px 16px rgba(0,0,0,0.08))', 400);
+            setTimeout(() => logoCanvas.style.filter = 'drop-shadow(4px 4px 12px rgba(0,0,0,0.1))', 400);
         }, "+=2.0");
         
-        // UI 显现 (对角布局动画)
-        tl.to(logoCanvas, { opacity: 1, duration: 1.8 }, "-=0.5");
-        tl.fromTo(".matrix-nav", { opacity: 0, x: 30 }, { opacity: 1, x: 0, duration: 1.5, ease: "power2.out" }, "-=1.2");
-        tl.fromTo(".social-row", { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 1.5 }, "-=0.8");
-        tl.to(".footer", { opacity: 0.7, duration: 2.0 }, "-=1.5");
+        // UI 入场动画 (垂直居中渐显+上浮)
+        tl.to(logoCanvas, { opacity: 1, duration: 1.5, ease: "power2.out" }, "-=0.3");
+        tl.fromTo(".matrix-nav", 
+            { opacity: 0, y: 15 }, 
+            { opacity: 1, y: 0, duration: 1.2, ease: "power2.out", stagger: 0.1 }, 
+            "-=1.0");
+        tl.fromTo(".social-row", 
+            { opacity: 0, y: 15 }, 
+            { opacity: 1, y: 0, duration: 1.2, ease: "power2.out" }, 
+            "-=0.8");
+        tl.to(".footer", 
+            { opacity: 0.7, duration: 1.8, ease: "power2.out" }, 
+            "-=1.2");
     }
 
     // ---------- 交互事件 ----------
@@ -656,7 +664,6 @@ export default {
     }
 
     function onDocumentClick(e) {
-        // 音效初始化
         if (!window._audioInit) {
             window._audioInit = true;
             const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -673,7 +680,6 @@ export default {
             }
             document.getElementById('audio-prompt').style.opacity = '0';
         }
-        // 点击涟漪
         const rect = particleCanvas.getBoundingClientRect();
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
@@ -682,7 +688,7 @@ export default {
         }
     }
 
-    // ---------- 初始化与自适应 ----------
+    // ---------- 初始化 ----------
     function resize() {
         w = bgCanvas.width = particleCanvas.width = textureCanvas.width = inkCanvas.width = window.innerWidth;
         h = bgCanvas.height = particleCanvas.height = textureCanvas.height = inkCanvas.height = window.innerHeight;
@@ -702,7 +708,6 @@ export default {
     window.addEventListener('mousemove', onMouseMove);
     window.addEventListener('click', onDocumentClick);
     
-    // 导航项点击防默认（示例）
     document.querySelectorAll('.nav-item, .social-icon').forEach(el => {
         el.addEventListener('click', (e) => {
             e.preventDefault();
