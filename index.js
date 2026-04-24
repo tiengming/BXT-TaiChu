@@ -345,13 +345,15 @@ export default {
                 b: parseInt(result[3], 16)
             } : { r: 30, g: 39, b: 50 };
         },
+
         updateStatusBar(name, phrase) {
             const bar = document.getElementById('status-bar');
             if (bar) {
-                bar.innerHTML = `<span>此间[${name}]</span><span>${phrase}</span>`;
-                // 修复：移除这里的直接 opacity 赋值，交给 CSS 变量动画
+                // 使用 \x5B 代表 [，\x5D 代表 ]
+                bar.innerHTML = '<span>此间\x5B' + name + '\x5D</span><span>' + phrase + '</span>';
             }
         },
+
         startBreathing() {
             // 修复：新增文字透明度呼吸，增加灵动感，且不会被覆盖
             const tl = gsap.timeline({ repeat: -1, yoyo: true });
@@ -427,7 +429,7 @@ export default {
                     ease: "power2.inOut",
                     onComplete: () => {
                         // 步骤 B: 在完全透明时静默更换内容
-                        footer.innerHTML = `<span>君在[${city}]，相距${Math.round(dist)}公里。</span><br><span>© 卜仙堂 · 道隐无名</span>`;
+                        footer.innerHTML = '<span>君在\x5B' + city + '\x5D，相距' + Math.round(dist) + '公里。</span><br><span>© 卜仙堂 · 道隐无名</span>';
                         
                         // 步骤 C: 整体文字淡回 0.85（或你想要的呼吸基准值）
                         gsap.to(root, {
