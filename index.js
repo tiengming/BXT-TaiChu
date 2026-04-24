@@ -122,7 +122,9 @@ export default {
         .bg-texture {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
-            background-image: url('data:image/svg+xml;utf8,<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"><filter id="noiseFilter"><feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(%23noiseFilter)" opacity="var(--vignette-opacity)"/></svg>');
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+            background-repeat: repeat;
+            opacity: var(--vignette-opacity);
             pointer-events: none;
             z-index: 1;
             filter: blur(var(--blur-strength));
@@ -338,7 +340,12 @@ export default {
 
     const CONFIG = {
         DOJO_COORD: { lat: 36.25, lon: 117.10 },
-        PENTAD_MAP: ${JSON.stringify(PENTAD_MAP)}
+        PENTAD_MAP: ${JSON.stringify(PENTAD_MAP)},
+        USER_LOCATION: {
+            lat: request.cf?.latitude || 36.25,
+            lon: request.cf?.longitude || 117.10,
+            city: request.cf?.city || "泰安"
+        }
     };
 
     const ThemeEngine = {
@@ -374,19 +381,24 @@ export default {
             }
             return CONFIG.PENTAD_MAP["东风解冻"];
         },
-        applyTheme(color, nightOpacity) {
+                applyTheme(color, nightOpacity) {
             const root = document.documentElement;
+            const rgb = this.hexToRgb(color);
+            const brightness = (rgb.r * 299 + rgb.g * 587 + rgb.b * 114) / 1000;
+            const isDark = brightness < 128;
+            const inkColor = isDark ? "#FFFFFF" : "#1E2732";
+
+            // Elegant GSAP transition for multiple properties
             gsap.to(root, {
                 '--theme-color': color,
                 '--night-opacity': nightOpacity,
-                duration: 2,
+                '--color-ink': inkColor,
+                duration: 2.5,
                 ease: "power2.inOut"
             });
 
-            const rgb = this.hexToRgb(color);
-            const brightness = (rgb.r * 299 + rgb.g * 587 + rgb.b * 114) / 1000;
-            const inkColor = brightness < 128 ? "#FFFFFF" : "#1E2732";
-            root.style.setProperty('--color-ink', inkColor);
+            // Extra contrast for specific elements if needed
+            root.style.setProperty('--ink-contrast', isDark ? "0.1" : "0.04");
         },
         hexToRgb(hex) {
             const result = /^#?([a-f\\d]{2})([a-f\\d]{2})([a-f\\d]{2})$/i.exec(hex);
@@ -422,23 +434,7 @@ export default {
                 this.updateUI(dist, pos.city);
             }
         },
-        async getLocation() {
-            const cached = localStorage.getItem('bxt_location');
-            if (cached) {
-                const data = JSON.parse(cached);
-                if (Date.now() - data.ts < 86400000) return data;
-            }
-            try {
-                const res = await fetch('https://ipwho.is/');
-                const data = await res.json();
-                if (data.success) {
-                    const result = { lat: data.latitude, lon: data.longitude, city: data.city, ts: Date.now() };
-                    localStorage.setItem('bxt_location', JSON.stringify(result));
-                    return result;
-                }
-            } catch (e) {}
-            return null;
-        },
+        async getLocation() { return CONFIG.USER_LOCATION; },
         calculateDistance(lat1, lon1, lat2, lon2) {
             const R = 6371;
             const dLat = (lat2 - lat1) * Math.PI / 180;
