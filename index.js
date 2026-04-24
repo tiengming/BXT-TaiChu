@@ -1,8 +1,17 @@
 export default {
   async fetch(request, env, ctx) {
+    const cf = request.cf || {};
+    const geo = {
+      lat: cf.latitude,
+      lon: cf.longitude,
+      city: cf.city || cf.region || "未知"
+    };
+
+
     const html = `<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
+    <script>window.INITIAL_GEO = ${JSON.stringify(geo)};</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>卜仙堂 · 时空共鸣</title>
@@ -35,7 +44,7 @@ export default {
             overflow: hidden;
             /* 优化：增加中间层色值，让渐变更柔和 */
             background: radial-gradient(circle at 50% 35%, #ffffff 0%, var(--theme-color) 75%, var(--theme-color) 100%);
-            font-family: "STKaiti", "KaiTi", "Songti SC", "Noto Serif SC", serif;
+            font-family: "STKaiti", "KaiTi", "Songti SC", "Noto Serif SC", "Source Han Serif SC", "Source Han Serif", serif; font-display: swap;
             -webkit-font-smoothing: antialiased;
             cursor: none;
             transition: background 2s ease;
@@ -121,7 +130,7 @@ export default {
             transform: translateY(20px);
         }
 
-        .logo-text {
+        .logo-text { line-height: 1.2;
             font-size: clamp(48px, 12vw, 84px);
             font-weight: bold;
             color: var(--ink-depth);
@@ -225,7 +234,7 @@ export default {
   </filter>
 </svg>
 
-<div id="status-bar"></div>
+<div id="status-bar"><span>正在感应时空...</span></div>
 <div id="cursor-dot"></div>
 <div id="cursor-trail"></div>
 
@@ -243,7 +252,7 @@ export default {
             <a href="mailto:tiengming@qq.com" class="social-icon" target="_blank"><i class="fas fa-envelope"></i></a>
         </div>
     </div>
-    <div class="footer" id="footer-text"><span>© 卜仙堂 · 道隐无名</span></div>
+    <div class="footer" id="footer-text"><span>正在同步地理位置...</span><br><span>© 卜仙堂 · 道隐无名</span></div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
@@ -376,12 +385,15 @@ export default {
     const PresenceEngine = {
         async init() {
             const pos = await this.getLocation();
-            if (pos) {
-                const dist = this.calculateDistance(pos.lat, pos.lon, CONFIG.DOJO_COORD.lat, CONFIG.DOJO_COORD.lon);
-                this.updateUI(dist, pos.city);
-            }
+            const dist = (pos && pos.lat && pos.lon)
+                ? this.calculateDistance(pos.lat, pos.lon, CONFIG.DOJO_COORD.lat, CONFIG.DOJO_COORD.lon)
+                : null;
+            this.updateUI(dist, pos ? pos.city : "未知");
         },
         async getLocation() {
+            if (window.INITIAL_GEO && window.INITIAL_GEO.lat && window.INITIAL_GEO.lon) {
+                return { ...window.INITIAL_GEO, ts: Date.now() };
+            }
             const cached = localStorage.getItem('bxt_location');
             if (cached) {
                 const data = JSON.parse(cached);
@@ -399,20 +411,23 @@ export default {
             return null;
         },
         calculateDistance(lat1, lon1, lat2, lon2) {
-            const R = 6371;
-            const dLat = (lat2 - lat1) * Math.PI / 180;
-            const dLon = (lon2 - lon1) * Math.PI / 180;
-            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                      Math.sin(dLon/2) * Math.sin(dLon/2);
-            return 2 * R * Math.asin(Math.sqrt(a));
+            try {
+                const R = 6371;
+                const dLat = (lat2 - lat1) * Math.PI / 180;
+                const dLon = (lon2 - lon1) * Math.PI / 180;
+                const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                          Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                          Math.sin(dLon/2) * Math.sin(dLon/2);
+                const d = 2 * R * Math.asin(Math.sqrt(a));
+                return isNaN(d) ? null : d;
+            } catch (e) { return null; }
         },
         updateUI(dist, city) {
             const root = document.documentElement;
-            const blur = Math.min(dist / 1200, 3);
-            const shadow = Math.max(20 - (dist / 300), 8);
+            const isInvalid = dist === null || isNaN(dist);
+            const blur = isInvalid ? 0 : Math.min(dist / 1200, 3);
+            const shadow = isInvalid ? 12 : Math.max(20 - (dist / 300), 8);
             
-            // 1. 先同步更新模糊度和阴影的物理属性
             gsap.to(root, {
                 '--blur-strength': blur + 'px',
                 '--shadow-intensity': shadow + 'px',
@@ -422,16 +437,13 @@ export default {
             
             const footer = document.getElementById('footer-text');
             if (footer) {
-                // 2. 这里是关键：使用 GSAP 变量动画实现文字的“淡入淡出”切换
                 gsap.to(root, {
-                    '--text-base-opacity': 0, // 步骤 A: 整体文字淡出
+                    '--text-base-opacity': 0,
                     duration: 0.6,
                     ease: "power2.inOut",
                     onComplete: () => {
-                        // 步骤 B: 在完全透明时静默更换内容
-                        footer.innerHTML = '<span>君在\x5B' + city + '\x5D，相距' + Math.round(dist) + '公里。</span><br><span>© 卜仙堂 · 道隐无名</span>';
-                        
-                        // 步骤 C: 整体文字淡回 0.85（或你想要的呼吸基准值）
+                        const distStr = isInvalid ? '遥遥' : Math.round(dist) + '公里';
+                        footer.innerHTML = '<span>君在\x5B' + city + '\x5D，相距' + distStr + '。</span><br><span>© 卜仙堂 · 道隐无名</span>';
                         gsap.to(root, {
                             '--text-base-opacity': 0.85, 
                             duration: 0.8,
@@ -493,6 +505,15 @@ export default {
               .to('#ink-loader', { opacity: 0, duration: 1 }, "-=1")
               .to('.content-wrapper', { opacity: 1, y: 0, duration: 1.5, ease: "power3.out" }, "-=1.5")
               .set('#ink-loader', { display: 'none' });
+
+            // 5秒强制兜底，确保UI可见
+            setTimeout(() => {
+                const loader = document.getElementById('ink-loader');
+                if (loader && loader.style.display !== 'none') {
+                    gsap.to('#ink-loader', { opacity: 0, duration: 1, onComplete: () => loader.style.display = 'none' });
+                    gsap.to('.content-wrapper', { opacity: 1, y: 0, duration: 1 });
+                }
+            }, 5000);
         }
     };
 
