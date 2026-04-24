@@ -370,25 +370,49 @@ export default {
             try {
                 const solarDay = SolarDay.fromYmd(date.getFullYear(), date.getMonth() + 1, date.getDate());
                 const pd = solarDay.getPhenologyDay();
-                const name = pd.getPhenology().getName();
+                const pentad = pd.getPhenology();
+                const name = pentad.getName();
 
-                if (CONFIG.PENTAD_MAP[name]) return CONFIG.PENTAD_MAP[name];
-                for (let k in CONFIG.PENTAD_MAP) {
-                    if (name.includes(k) || k.includes(name)) return CONFIG.PENTAD_MAP[k];
-                }
+                const pentadKeys = Object.keys(CONFIG.PENTAD_MAP);
+                let currentIndex = pentadKeys.findIndex(k => name.includes(k) || k.includes(name));
+                if (currentIndex === -1) currentIndex = 0;
+
+                const currentPentad = CONFIG.PENTAD_MAP[pentadKeys[currentIndex]];
+                const nextPentad = CONFIG.PENTAD_MAP[pentadKeys[(currentIndex + 1) % 72]];
+
+                const dayInPentad = pd.getIndex();
+                const progress = (dayInPentad - 1) / 5;
+
+                const interpolatedColor = this.lerpColor(currentPentad.color, nextPentad.color, progress);
+
+                return {
+                    name: currentPentad.name,
+                    phrase: currentPentad.phrase,
+                    color: interpolatedColor
+                };
             } catch (e) {
                 console.error("Tyme engine error:", e);
             }
             return CONFIG.PENTAD_MAP["东风解冻"];
         },
-                applyTheme(color, nightOpacity) {
+        lerpColor(a, b, amount) {
+            const ah = parseInt(a.replace(/#/g, ""), 16),
+                  ar = ah >> 16, ag = (ah >> 8) & 0xff, ab = ah & 0xff,
+                  bh = parseInt(b.replace(/#/g, ""), 16),
+                  br = bh >> 16, bg = (bh >> 8) & 0xff, bb = bh & 0xff,
+                  rr = ar + amount * (br - ar),
+                  rg = ag + amount * (bg - ag),
+                  rb = ab + amount * (bb - ab);
+
+            return "#" + ((1 << 24) + (Math.round(rr) << 16) + (Math.round(rg) << 8) + Math.round(rb)).toString(16).slice(1);
+        },
+        applyTheme(color, nightOpacity) {
             const root = document.documentElement;
             const rgb = this.hexToRgb(color);
             const brightness = (rgb.r * 299 + rgb.g * 587 + rgb.b * 114) / 1000;
             const isDark = brightness < 128;
             const inkColor = isDark ? "#FFFFFF" : "#1E2732";
 
-            // Elegant GSAP transition for multiple properties
             gsap.to(root, {
                 '--theme-color': color,
                 '--night-opacity': nightOpacity,
@@ -397,7 +421,6 @@ export default {
                 ease: "power2.inOut"
             });
 
-            // Extra contrast for specific elements if needed
             root.style.setProperty('--ink-contrast', isDark ? "0.1" : "0.04");
         },
         hexToRgb(hex) {
@@ -411,7 +434,7 @@ export default {
         updateStatusBar(name, phrase) {
             const bar = document.getElementById('status-bar');
             if (bar) {
-                bar.innerHTML = \`<span>此间[\${name}]</span><span>\${phrase}</span>\`;
+                bar.innerHTML = `<span>此间[${name}]</span><span>${phrase}</span>`;
                 bar.style.opacity = 0.6;
             }
         },
@@ -458,7 +481,7 @@ export default {
 
             const footer = document.getElementById('footer-text');
             if (footer) {
-                footer.innerHTML = \`<span>君在[\${city}]，相距\${Math.round(dist)}公里。© 卜仙堂 · 道隐无名</span>\`;
+                footer.innerHTML = `<span>君在[${city}]，相距${Math.round(dist)}公里。© 卜仙堂 · 道隐无名</span>`;
             }
         }
     };
@@ -509,18 +532,32 @@ export default {
             }
         },
         setupLoading() {
-            const tl = gsap.timeline();
-            tl.to('.ink-spot', { width: '300vw', height: '300vw', opacity: 0, duration: 2, ease: "power2.inOut" })
+            const tl = gsap.timeline({
+                onComplete: () => {
+                    const wrapper = document.querySelector('.content-wrapper');
+                    if (wrapper) wrapper.style.opacity = 1;
+                    const loader = document.getElementById('ink-loader');
+                    if (loader) loader.style.display = 'none';
+                }
+            });
+            tl.to('.ink-spot', { width: '300vw', height: '300vw', opacity: 0, duration: 2.5, ease: "power2.inOut" })
               .to('#ink-loader', { opacity: 0, duration: 1 }, "-=1")
-              .to('.content-wrapper', { opacity: 1, y: 0, duration: 1.5, ease: "power2.out" }, "-=1.5")
-              .set('#ink-loader', { display: 'none' });
+              .to('.content-wrapper', { opacity: 1, y: 0, duration: 1.5, ease: "power2.out" }, "-=1.5");
+
+            setTimeout(() => {
+                const loader = document.getElementById('ink-loader');
+                if (loader && loader.style.display !== 'none') {
+                    gsap.to('#ink-loader', { opacity: 0, duration: 0.5, onComplete: () => loader.style.display = 'none' });
+                    gsap.to('.content-wrapper', { opacity: 1, y: 0, duration: 0.5 });
+                }
+            }, 5000);
         }
     };
 
     ThemeEngine.init();
     PresenceEngine.init();
     Interaction.init();
-</script>
+    </script>
 
 <noscript>
     <style>
