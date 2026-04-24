@@ -1,46 +1,48 @@
-# 卜仙堂 (BuXianTang) · 时空共鸣系统
+# 卜仙堂 · Spatiotemporal Resonance System (Resonance Plus)
 
-> 基于 Cloudflare Workers 的全时空感应数字道场。融合中国传统物候（72物候）与全球实时气象，构建一个“道法自然”的动态环境感知界面。
+> **"道法自然，气象共鸣"**
 
-## 🌟 核心特性
+A high-fidelity, interdisciplinary web experience that fuses traditional Chinese phenology (72 Pentads) with global real-time weather and geo-spatial data. Built on Cloudflare Workers for edge-speed delivery and "Computational Aesthetic" rendering.
 
-- **全球气象分流引擎**：
-  - **中国大陆**：集成和风天气 (QWeather) v7，通过城市级 IP 定位纠偏，解决定位偏差。
-  - **全球地区**：接入 OpenWeatherMap One Call API，覆盖全球气象数据。
-- **视觉美学共鸣**：
-  - **地色层**：联动 72 物候配色方案，随节气流转自动切换主题色。
-  - **气色层**：基于 SVG `feTurbulence` 滤镜的实时大气层，动态关联风速、雨量与天气类型。
-  - **墨色层**：智能感知背景亮度，自动切换 UI 文本对比度（#FFFFFF / #1E2732）。
-- **动态交互体验**：
-  - **物候状态栏**：根据节气、时间、天气生成富有哲学韵味的处世建议（如：此间 [谷雨] · 晨光 · 宜晨省）。
-  - **地理位置共鸣**：实时计算用户与道场（Dojo）的时空距离，动态调整界面模糊度与阴影强度。
-- **性能保障**：
-  - 内置 FPS 监测器，当帧率低于 40fps 时自动降级 SVG 滤镜复杂度，确保移动端流畅度。
+## 🌌 Core Features
 
-## 🛠️ 技术架构
+### 1. Global Weather & Geo-Fencing
+- **Dual-Track API Logic:**
+  - **China (CN):** QWeather (和风天气) v7 integration for city-level precision via ISP-optimized IP databases.
+  - **Global:** OpenWeatherMap One Call API for sunrise/sunset, UV, and atmospheric conditions.
+- **Dojo Proximity:** Calculates the Haversine distance from the user's location to the **Dojo Coord** (30.24, 120.15) with real-time UI blurring based on spatial resonance.
 
-- **Runtime**: Cloudflare Workers
-- **Animation**: GSAP 3 (GreenSock Animation Platform)
-- **Logic**: 模块化解耦设计 (WeatherEngine, ThemeEngine, PresenceEngine, Interaction)
-- **Data Source**: QWeather v7, OpenWeatherMap API, Tyme4ts (物候计算)
+### 2. Phenological Theme Engine
+- **72 Pentads (物候):** Dynamic mapping of traditional micro-seasons to "Zhongguose" (Chinese colors).
+- **Temporal Opacity:** Automatic night-mode transition triggered by actual solar sunset/sunrise data rather than static clocks.
+- **Ink Breathing:** GSAP-driven synchronized transitions for theme colors, ink contrast, and background vignettes.
 
-## 📁 部署说明
+### 3. Computational Aesthetics (Atmosphere Layer)
+- **SVG Turbulence:** Dynamic `feTurbulence` and `feDisplacementMap` filters simulating "Xuan Paper" grain and atmospheric mist.
+- **Weather-Driven Filters:**
+  - **Clear:** Tyndall beam effects via mask-imaging.
+  - **Rain/Snow:** Increased turbulence frequency and displacement scale.
+  - **Storm:** GSAP-driven visual opacity flashes (Lightning pulses).
+- **Performance Safeguard:** Real-time FPS monitoring. Automatically degrades filter complexity (reduction to 1 octave) if frame rate drops below 40fps.
 
-### 1. 环境变量配置
-在 Cloudflare Worker 控制台中添加以下密钥：
-- `QWEATHER_KEY`: 和风天气 API Key (v7)
-- `OPENWEATHER_KEY`: OpenWeatherMap API Key
+## 🛠 Technical Architecture
 
-### 2. 部署代码
-```bash
-wrangler deploy
-```
+- **Runtime:** Cloudflare Workers (Edge Computing).
+- **Security:** Strict hex-encoding (`\x5B`, `\x5D`, `\x22`) for all client-side injected JS to prevent build-time parsing conflicts.
+- **Animation:** GSAP (GreenSock Animation Platform) for smooth, high-precision visual state management.
+- **Typography:** LXGW WenKai (霞鹜文楷) for body text and Source Han Serif (思源宋体) for high-contrast titles.
 
-## 📜 视觉规范
+## 🚀 Deployment
 
-- **转义安全**：所有动态注入字符串均遵循 `\x5B` ( [ ), `\x5D` ( ] ) 等转义规范，规避构建工具解析冲突。
-- **字体方案**：标题使用思源宋体 (Source Han Serif)，正文使用霞鹜文楷 (LXGW WenKai)，追求隐士美学质感。
+1. **Environment Variables:**
+   - `QWEATHER_KEY`: Your QWeather API Key.
+   - `OPENWEATHER_KEY`: Your OpenWeatherMap API Key.
+2. **Wrangler Configuration:**
+   - Run `wrangler deploy` to push to the edge.
+
+## 📜 Philosophy
+
+This project transcends mere data visualization. It aims to create an **Environment-Aware Interface (EAI)** where the digital boundary dissolves into the physical world's phenology. Each visit is unique, shaped by the local wind, the current pentad, and the user's distance from the origin.
 
 ---
-
-© 2026 卜仙堂 · 易理、技术与美学的融合。
+*© 卜仙堂 · 道隐无名*
