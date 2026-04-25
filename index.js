@@ -1,529 +1,110 @@
 export default {
   async fetch(request, env, ctx) {
     const cf = request.cf || {};
+    const country = cf.country || 'Unknown';
+    const isCN = country === 'CN';
     const geo = {
-      lat: cf.latitude,
-      lon: cf.longitude,
-      city: cf.city || cf.region || "未知"
+      lat: cf.latitude || 30.24,
+      lon: cf.longitude || 120.15,
+      city: cf.city || cf.region || '未知',
+      country: country,
+      isCN: isCN
     };
-
-
-    const html = `<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <script>window.INITIAL_GEO = ${JSON.stringify(geo)};</script>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>卜仙堂 · 时空共鸣</title>
-    <link rel="icon" type="image/svg+xml" href="https://svg.buxiantang.top/images/originFavicon.svg">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <style>
-        :root {
-            /* 核心系统变量 */
-            --theme-color: #C93756; 
-            --ink-depth: #1E2732;   
-            --paper-color: #F2EFE8; 
-            --paper-dark: #E6E1D5;
-            
-            --blur-strength: 0px;
-            --shadow-intensity: 12px;
-            --night-opacity: 0;
-            --vignette-opacity: 0.04;
-            
-            /* 修复：顶部状态栏和页脚的专用透明度变量，防止被内联样式写死 */
-            --text-base-opacity: 0.85;
-            
-            --nav-gap: clamp(24px, 5vw, 48px);
-            --social-gap: clamp(20px, 5vw, 36px);
-        }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-
-        body, html {
-            width: 100%; height: 100%;
-            overflow: hidden;
-            /* 优化：增加中间层色值，让渐变更柔和 */
-            background: radial-gradient(circle at 50% 35%, #ffffff 0%, var(--theme-color) 75%, var(--theme-color) 100%);
-            font-family: "STKaiti", "KaiTi", "Songti SC", "Noto Serif SC", "Source Han Serif SC", "Source Han Serif", serif; font-display: swap;
-            -webkit-font-smoothing: antialiased;
-            cursor: none;
-            transition: background 2s ease;
-        }
-
-        .bg-texture {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            filter: url(#paper-noise);
-            opacity: 0.12; 
-            pointer-events: none;
-            z-index: 1;
-            mix-blend-mode: soft-light; 
-        }
-
-        body::after {
-            content: '';
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: #000;
-            opacity: var(--night-opacity);
-            pointer-events: none;
-            z-index: 9999;
-            mix-blend-mode: multiply;
-            transition: opacity 2s ease;
-        }
-
-        #status-bar {
-            top: calc(max(30px, env(safe-area-inset-top)));
-            position: absolute;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 14px;
-            letter-spacing: 2px;
-            color: var(--ink-depth); /* 联动墨色 */
-            opacity: var(--text-base-opacity);
-            z-index: 10;
-            display: flex;
-            gap: 20px;
-            text-shadow: 0 1px 2px rgba(0,0,0,0.05);
-            white-space: nowrap;
-        }
-
-        #cursor-dot {
-            position: fixed;
-            top: 0; left: 0;
-            width: 8px; height: 8px;
-            background-color: var(--theme-color); /* 联动主题色 */
-            border-radius: 50%;
-            pointer-events: none;
-            z-index: 10000;
-            transform: translate(-50%, -50%);
-            mix-blend-mode: multiply;
-        }
-
-        #cursor-trail {
-            position: fixed;
-            top: 0; left: 0;
-            width: 30px; height: 30px;
-            border: 1px solid var(--theme-color); /* 联动主题色线框 */
-            opacity: 0.2;
-            border-radius: 50%;
-            pointer-events: none;
-            z-index: 9998;
-            transform: translate(-50%, -50%);
-        }
-
-        #ui-layer {
-            position: absolute; top: 0; left: 0;
-            width: 100%; height: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 5;
-        }
-
-        .content-wrapper {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            opacity: 0;
-            transform: translateY(20px);
-        }
-
-        .logo-text { line-height: 1.2;
-            font-size: clamp(48px, 12vw, 84px);
-            font-weight: bold;
-            color: var(--ink-depth);
-            margin-bottom: 32px;
-            letter-spacing: 6px;
-            text-shadow: 0 4px var(--shadow-intensity) rgba(0,0,0,0.08);
-            transition: color 1s;
-        }
-
-        .matrix-nav {
-            display: flex; flex-wrap: wrap;
-            gap: var(--nav-gap);
-            justify-content: center;
-            margin-bottom: 32px;
-        }
-
-        .nav-item {
-            color: var(--ink-depth);
-            font-size: clamp(18px, 4vw, 22px);
-            letter-spacing: 4px;
-            padding: 10px 0;
-            opacity: 0.7;
-            transition: all 0.6s cubic-bezier(0.22, 1, 0.36, 1);
-            text-decoration: none;
-            position: relative;
-        }
-
-        .nav-item:hover {
-            color: var(--hover-accent); /* 使用智能计算的悬浮色 */
-            opacity: 1;
-            transform: translateY(-2px);
-            letter-spacing: 6px; /* 增加一点张力 */
-        }
-        .nav-item:hover ~ #cursor-dot {
-            border: 1px solid var(--hover-accent);
-        }
-        .social-row {
-            display: flex; gap: var(--social-gap);
-            justify-content: center;
-        }
-
-        .social-icon {
-            /* 修复：图标颜色由原本的固定琥珀色改为联动主题色，但保持较低对比度 */
-            color: var(--ink-depth); 
-            font-size: 24px;
-            transition: all 0.5s ease;
-            opacity: 0.6;
-            text-decoration: none;
-        }
-
-        .social-icon:hover {
-            color: var(--hover-accent);
-            opacity: 1;
-            transform: scale(1.1);
-        }
-
-        .footer {
-            position: absolute;
-            bottom: 40px;
-            color: var(--ink-depth);
-            font-size: 12px;
-            letter-spacing: 3px;
-            text-align: center;
-            opacity: var(--text-base-opacity);
-            width: 100%;
-        }
-        
-        #ink-loader {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: var(--paper-color);
-            z-index: 10001;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-        
-        .ink-spot {
-            width: 10px; height: 10px;
-            background: var(--theme-color);
-            border-radius: 50%;
-            filter: blur(40px);
-            opacity: 0.5;
-        }
-
-        @media (max-width: 768px) {
-            #status-bar { top: 20px; font-size: 12px; }
-            .nav-item::after { display: none; }
-        }
-    </style>
-</head>
-<body>
-
-<div id="ink-loader"><div class="ink-spot"></div></div>
-<div class="bg-texture"></div>
-
-<svg style="display: none;">
-  <filter id="paper-noise">
-    <feTurbulence type="fractalNoise" baseFrequency="0.45" numOctaves="3" stitchTiles="stitch" />
-    <feColorMatrix type="matrix" values="0.33 0.33 0.33 0 0 0.33 0.33 0.33 0 0 0.33 0.33 0.33 0 0 0 0 0 1 0" />
-  </filter>
-</svg>
-
-<div id="status-bar"><span>正在感应时空...</span></div>
-<div id="cursor-dot"></div>
-<div id="cursor-trail"></div>
-
-<div id="ui-layer">
-    <div class="content-wrapper">
-        <div class="logo-text">卜仙堂</div>
-        <div class="matrix-nav">
-            <a href="https://blog.buxiantang.top" class="nav-item">博客入口</a>
-            <a href="https://anal.buxiantang.top/about" class="nav-item">经典解析</a>
-            <a href="https://blog.buxiantang.top/about" class="nav-item">关于我</a>
-        </div>
-        <div class="social-row">
-            <a href="https://mp.weixin.qq.com/mp/profile_ext?action=home&__biz=MzIwNzY4NDU3Nw==#wechat_redirect" class="social-icon" target="_blank"><i class="fab fa-weixin"></i></a>
-            <a href="https://space.bilibili.com/265656567" class="social-icon" target="_blank"><i class="fab fa-bilibili"></i></a>
-            <a href="mailto:tiengming@qq.com" class="social-icon" target="_blank"><i class="fas fa-envelope"></i></a>
-        </div>
-    </div>
-    <div class="footer" id="footer-text"><span>正在同步地理位置...</span><br><span>© 卜仙堂 · 道隐无名</span></div>
-</div>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
-<script type="module">
-    import { SolarDay } from 'https://cdn.jsdelivr.net/npm/tyme4ts@1.4.6/dist/lib/index.mjs';
-
-    // 映射表保持不变...
-    const CONFIG = {
-        DOJO_COORD: { lat: 36.25, lon: 117.10 },
-        PENTAD_MAP: {"东风解冻": {"name": "东风解冻", "color": "#E0F0E9", "phrase": "立春初候，万物复苏"}, "蛰虫始振": {"name": "蛰虫始振", "color": "#C0D9D9", "phrase": "立春二候，生机微动"}, "鱼陟负冰": {"name": "鱼陟负冰", "color": "#A1C6C8", "phrase": "立春三候，阳气转达"}, "獭祭鱼": {"name": "獭祭鱼", "color": "#B7D1CF", "phrase": "雨水初候，候鸟思归"}, "候雁北": {"name": "候雁北", "color": "#87BFA2", "phrase": "雨水二候，鸿雁北飞"}, "草木萌动": {"name": "草木萌动", "color": "#A8D8B9", "phrase": "雨水三候，春意渐浓"}, "桃始华": {"name": "桃始华", "color": "#FFB7C5", "phrase": "惊蛰初候，桃花始开"}, "仓庚鸣": {"name": "仓庚鸣", "color": "#FAD0C9", "phrase": "惊蛰二候，黄鹂鸣柳"}, "鹰化为鸠": {"name": "鹰化为鸠", "color": "#E97692", "phrase": "惊蛰三候，春雷震响"}, "玄鸟至": {"name": "玄鸟至", "color": "#EF82A0", "phrase": "春分初候，燕子归来"}, "雷乃发声": {"name": "雷乃发声", "color": "#F3A694", "phrase": "春分二候，雷动九天"}, "始电": {"name": "始电", "color": "#A1AF9D", "phrase": "春分三候，电光流转"}, "桐始华": {"name": "桐始华", "color": "#B8D200", "phrase": "清明初候，桐花盛放"}, "田鼠化为鴽": {"name": "田鼠化为鴽", "color": "#90B44B", "phrase": "清明二候，阴气渐消"}, "虹始见": {"name": "虹始见", "color": "#6A8372", "phrase": "清明三候，彩虹初现"}, "萍始生": {"name": "萍始生", "color": "#4F726C", "phrase": "谷雨初候，浮萍生长"}, "鸣鸠拂其羽": {"name": "鸣鸠拂其羽", "color": "#2E5C5E", "phrase": "谷雨二候，布谷声声"}, "戴胜降于桑": {"name": "戴胜降于桑", "color": "#1B4332", "phrase": "谷雨三候，桑蚕待吐"}, "蝼蝈鸣": {"name": "蝼蝈鸣", "color": "#FADAD8", "phrase": "立夏初候，夏虫始鸣"}, "蚯蚓出": {"name": "蚯蚓出", "color": "#F0A7A0", "phrase": "立夏二候，大地湿润"}, "王瓜生": {"name": "王瓜生", "color": "#E96D71", "phrase": "立夏三候，蔓藤攀缘"}, "苦菜秀": {"name": "苦菜秀", "color": "#D8302F", "phrase": "小满初候，苦菜繁茂"}, "靡草死": {"name": "靡草死", "color": "#C93756", "phrase": "小满二候，喜阴草枯"}, "麦秋至": {"name": "麦秋至", "color": "#A61B29", "phrase": "小满三候，麦收在望"}, "螳螂生": {"name": "螳螂生", "color": "#8C1C13", "phrase": "芒种初候，螳螂破茧"}, "鵙始鸣": {"name": "鵙始鸣", "color": "#F28E1C", "phrase": "芒种二候，伯劳啼鸣"}, "反舌无声": {"name": "反舌无声", "color": "#EB7A77", "phrase": "芒种三候，百舌静止"}, "鹿角解": {"name": "鹿角解", "color": "#F2A0A1", "phrase": "夏至初候，阳极阴生"}, "蜩始鸣": {"name": "蜩始鸣", "color": "#EF928F", "phrase": "夏至二候，蝉鸣深树"}, "半夏生": {"name": "半夏生", "color": "#C04851", "phrase": "夏至三候，良药而生"}, "温风至": {"name": "温风至", "color": "#B93A26", "phrase": "小暑初候，热浪袭来"}, "蟋蟀居壁": {"name": "蟋蟀居壁", "color": "#A7535A", "phrase": "小暑二候，蟋蟀避热"}, "鹰始挚": {"name": "鹰始挚", "color": "#813C3C", "phrase": "小暑三候，老鹰盘旋"}, "腐草为萤": {"name": "腐草为萤", "color": "#F47983", "phrase": "大暑初候，萤火微光"}, "土润溽暑": {"name": "土润溽暑", "color": "#F9906F", "phrase": "大暑二候，湿热蒸腾"}, "大雨时行": {"name": "大雨时行", "color": "#D25116", "phrase": "大暑三候，骤雨初歇"}, "凉风至": {"name": "凉风至", "color": "#F8F4ED", "phrase": "立秋初候，暑气渐消"}, "白露降": {"name": "白露降", "color": "#EEE6D8", "phrase": "立秋二候，晨露初凝"}, "寒蝉鸣": {"name": "寒蝉鸣", "color": "#DED0B6", "phrase": "立秋三候，秋蝉哀婉"}, "鹰乃祭鸟": {"name": "鹰乃祭鸟", "color": "#B99C6B", "phrase": "处暑初候，万物收敛"}, "天地始肃": {"name": "天地始肃", "color": "#8C7042", "phrase": "处暑二候，肃杀之气"}, "禾乃登": {"name": "禾乃登", "color": "#F9D3E3", "phrase": "处暑三候，五谷丰登"}, "鸿雁来": {"name": "鸿雁来", "color": "#EACD76", "phrase": "白露初候，雁阵南翔"}, "玄鸟归": {"name": "玄鸟归", "color": "#D58A46", "phrase": "白露二候，燕子南飞"}, "群鸟养羞": {"name": "群鸟养羞", "color": "#B47131", "phrase": "白露三候，众鸟储食"}, "雷始收声": {"name": "雷始收声", "color": "#8A5D2D", "phrase": "秋分初候，惊雷不再"}, "蛰虫坯户": {"name": "蛰虫坯户", "color": "#6B4E24", "phrase": "秋分二候，虫入地中"}, "水始涸": {"name": "水始涸", "color": "#F2EADA", "phrase": "秋分三候，降水骤减"}, "鸿雁来宾": {"name": "鸿雁来宾", "color": "#E9D7C3", "phrase": "寒露初候，宾雁齐至"}, "雀入大水为蛤": {"name": "雀入大水为蛤", "color": "#D4A373", "phrase": "寒露二候，海市蜃楼"}, "菊有黄华": {"name": "菊有黄华", "color": "#B08D57", "phrase": "寒露三候，菊花金黄"}, "豺乃祭兽": {"name": "豺乃祭兽", "color": "#8F7647", "phrase": "霜降初候，豺狼捕食"}, "草木黄落": {"name": "草木黄落", "color": "#6D5E3B", "phrase": "霜降二候，落叶飘零"}, "蛰虫咸俯": {"name": "蛰虫咸俯", "color": "#4B4630", "phrase": "霜降三候，昆虫冬眠"}, "水始冰": {"name": "水始冰", "color": "#344352", "phrase": "立冬初候，凝水成冰"}, "地始冻": {"name": "地始冻", "color": "#1E2732", "phrase": "立冬二候，土木封冻"}, "雉入大水为蜃": {"name": "雉入大水为蜃", "color": "#10151D", "phrase": "立冬三候，大蛤隐现"}, "虹藏不见": {"name": "虹藏不见", "color": "#0A0A0F", "phrase": "小雪初候，彩虹消隐"}, "天气上升地气下降": {"name": "天气上升地气下降", "color": "#2C3E50", "phrase": "小雪二候，阴阳不交"}, "闭塞而成冬": {"name": "闭塞而成冬", "color": "#1A1A1A", "phrase": "小雪三候，严冬已至"}, "鹖鴠不鸣": {"name": "鹖鴠不鸣", "color": "#353535", "phrase": "大雪初候，寒鸟噤声"}, "虎始交": {"name": "虎始交", "color": "#4A4A4A", "phrase": "大雪二候，猛虎寻偶"}, "荔挺出": {"name": "荔挺出", "color": "#5F5F5F", "phrase": "大雪三候，马蔺萌发"}, "蚯蚓结": {"name": "蚯蚓结", "color": "#747474", "phrase": "冬至初候，万象更新"}, "麋角解": {"name": "麋角解", "color": "#898989", "phrase": "冬至二候，鹿角脱脱"}, "水泉动": {"name": "水泉动", "color": "#9E9E9E", "phrase": "冬至三候，泉水涌动"}, "雁北乡": {"name": "雁北乡", "color": "#B3B3B3", "phrase": "小寒初候，大雁北归"}, "鹊始巢": {"name": "鹊始巢", "color": "#C8C8C8", "phrase": "小寒二候，喜鹊筑巢"}, "雉始雊": {"name": "雉始雊", "color": "#DDDDDD", "phrase": "小寒三候，山鸡啼鸣"}, "鸡始乳": {"name": "鸡始乳", "color": "#F2F2F2", "phrase": "大寒初候，幼鸡破壳"}, "征鸟厉疾": {"name": "征鸟厉疾", "color": "#FFFFFF", "phrase": "大寒二候，猛禽巡猎"}, "水泽腹坚": {"name": "水泽腹坚", "color": "#E6E1D5", "phrase": "大寒三候，厚冰载途"}}
+    let weatherData = {
+      condition: 'Clear',
+      temp: 22,
+      sunrise: Math.floor(Date.now() / 1000) - 12 * 3600,
+      sunset: Math.floor(Date.now() / 1000) + 12 * 3600,
+      windSpeed: 0,
+      description: '晴',
+      city: geo.city,
+      offset: isCN ? 28800 : 0
     };
-
-    const ThemeEngine = {
-        init() {
-            this.update();
-            setInterval(() => this.update(), 3600000);
-            this.startBreathing();
-        },
-        update() {
-            const now = new Date();
-            const info = this.getPentadInfo(now);
-            const hour = now.getHours();
-            
-            let nightOpacity = 0;
-            if (hour >= 18) nightOpacity = (hour - 18) / 6 * 0.4;
-            else if (hour < 6) nightOpacity = (6 - hour) / 6 * 0.4;
-            
-            this.applyTheme(info.color, nightOpacity);
-            this.updateStatusBar(info.name, info.phrase);
-        },
-        getPentadInfo(date) {
-            try {
-                const solarDay = SolarDay.fromYmd(date.getFullYear(), date.getMonth() + 1, date.getDate());
-                const pd = solarDay.getPhenologyDay();
-                const name = pd.getPhenology().getName();
-                
-                if (CONFIG.PENTAD_MAP[name]) return CONFIG.PENTAD_MAP[name];
-                for (let k in CONFIG.PENTAD_MAP) {
-                    if (name.includes(k) || k.includes(name)) return CONFIG.PENTAD_MAP[k];
-                }
-            } catch (e) {
-                console.error("Tyme error:", e);
-            }
-            return CONFIG.PENTAD_MAP["东风解冻"];
-        },
-        applyTheme(color, nightOpacity) {
-            const root = document.documentElement;
-            const rgb = this.hexToRgb(color);
-            
-            // 计算感知亮度
-            const brightness = (rgb.r * 299 + rgb.g * 587 + rgb.b * 114) / 1000;
-            
-            // 1. 动态设置墨色 (Ink Color)
-            // 如果背景太亮，使用深墨色；如果背景太暗，使用纯白
-            // 阈值设为 165 左右，能更好地处理绿、黄等高亮度色系
-            const inkColor = brightness < 165 ? "#FFFFFF" : "#1E2732";
-            
-            // 2. 智能计算悬浮色 (Hover Accent)
-            // 如果背景是深色，悬浮色应该是背景颜色的“提亮版”
-            // 如果背景是浅色，悬浮色应该是背景颜色的“加深版”
-            let hoverColor;
-            if (brightness < 165) {
-                // 深色背景下：悬浮变为琥珀金或浅青，增加呼吸感
-                hoverColor = "#D58A46"; 
-            } else {
-                // 浅色背景下：悬浮变为深主题色，增加厚重感
-                hoverColor = this.adjustColor(color, -30); 
-            }
-
-            gsap.to(root, {
-                '--theme-color': color,
-                '--night-opacity': nightOpacity,
-                '--ink-depth': inkColor,
-                '--hover-accent': hoverColor, // 新增变量
-                duration: 2.5,
-                ease: "sine.inOut"
-            });
-        },
-
-        // 辅助函数：微调颜色亮度
-        adjustColor(hex, amt) {
-            let usePound = false;
-            if (hex[0] == "#") { hex = hex.slice(1); usePound = true; }
-            let num = parseInt(hex, 16);
-            let r = (num >> 16) + amt;
-            let g = (num >> 8 & 0x00FF) + amt;
-            let b = (num & 0x0000FF) + amt;
-            r = r > 255 ? 255 : r < 0 ? 0 : r;
-            g = g > 255 ? 255 : g < 0 ? 0 : g;
-            b = b > 255 ? 255 : b < 0 ? 0 : b;
-            // 确保输出始终为 6 位十六进制，并处理可能的计算偏差
-            return (usePound ? "#" : "") + (r << 16 | g << 8 | b).toString(16).padStart(6, '0');
-        },
-        hexToRgb(hex) {
-            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-            return result ? {
-                r: parseInt(result[1], 16),
-                g: parseInt(result[2], 16),
-                b: parseInt(result[3], 16)
-            } : { r: 30, g: 39, b: 50 };
-        },
-
-        updateStatusBar(name, phrase) {
-            const bar = document.getElementById('status-bar');
-            if (bar) {
-                // 使用 \x5B 代表 [，\x5D 代表 ]
-                bar.innerHTML = '<span>此间\x5B' + name + '\x5D</span><span>' + phrase + '</span>';
-            }
-        },
-
-        startBreathing() {
-            // 修复：新增文字透明度呼吸，增加灵动感，且不会被覆盖
-            const tl = gsap.timeline({ repeat: -1, yoyo: true });
-            tl.to(document.documentElement, {
-                '--text-base-opacity': 0.4,
-                duration: 4,
-                ease: "sine.inOut"
-            });
-
-            gsap.to(document.documentElement, {
-                '--vignette-opacity': 0.08,
-                duration: 15,
-                repeat: -1,
-                yoyo: true,
-                ease: "sine.inOut"
-            });
+    try {
+      if (isCN && env.QWEATHER_KEY) {
+        const loc = geo.lon.toFixed(2).concat(',', geo.lat.toFixed(2));
+        const dateStr = new Date().toISOString().split('T')[0].replace(/-/g, '');
+        const urlNow = 'https://devapi.qweather.com/v7/weather/now?location='.concat(loc, '&key=', env.QWEATHER_KEY);
+        const urlSun = 'https://devapi.qweather.com/v7/astronomy/sun?location='.concat(loc, '&key=', env.QWEATHER_KEY, '&date=', dateStr);
+        const resArr = await Promise.all([fetch(urlNow), fetch(urlSun)]);
+        const nowD = await resArr[0].json();
+        const sunD = await resArr[1].json();
+        if (nowD.code === '200') {
+          weatherData.temp = parseFloat(nowD.now.temp) || 22;
+          weatherData.description = nowD.now.text || '晴';
+          weatherData.windSpeed = parseFloat(nowD.now.windSpeed) || 0;
+          const t = nowD.now.text;
+          if (t.includes('雨')) weatherData.condition = 'Rain';
+          else if (t.includes('雪')) weatherData.condition = 'Snow';
+          else if (t.includes('云') || t.includes('阴')) weatherData.condition = 'Cloudy';
+          else if (t.includes('雷') || t.includes('暴')) weatherData.condition = 'Storm';
+          else if (t.includes('雾') || t.includes('霾') || t.includes('尘') || t.includes('沙')) weatherData.condition = 'Cloudy';
         }
-    };
-
-    const PresenceEngine = {
-        async init() {
-            const pos = await this.getLocation();
-            const dist = (pos && pos.lat && pos.lon)
-                ? this.calculateDistance(pos.lat, pos.lon, CONFIG.DOJO_COORD.lat, CONFIG.DOJO_COORD.lon)
-                : null;
-            this.updateUI(dist, pos ? pos.city : "未知");
-        },
-        async getLocation() {
-            if (window.INITIAL_GEO && window.INITIAL_GEO.lat && window.INITIAL_GEO.lon) {
-                return { ...window.INITIAL_GEO, ts: Date.now() };
-            }
-            const cached = localStorage.getItem('bxt_location');
-            if (cached) {
-                const data = JSON.parse(cached);
-                if (Date.now() - data.ts < 86400000) return data;
-            }
-            try {
-                const res = await fetch('https://ipwho.is/');
-                const data = await res.json();
-                if (data.success) {
-                    const result = { lat: data.latitude, lon: data.longitude, city: data.city, ts: Date.now() };
-                    localStorage.setItem('bxt_location', JSON.stringify(result));
-                    return result;
-                }
-            } catch (e) {}
-            return null;
-        },
-        calculateDistance(lat1, lon1, lat2, lon2) {
-            try {
-                const R = 6371;
-                const dLat = (lat2 - lat1) * Math.PI / 180;
-                const dLon = (lon2 - lon1) * Math.PI / 180;
-                const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                          Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                          Math.sin(dLon/2) * Math.sin(dLon/2);
-                const d = 2 * R * Math.asin(Math.sqrt(a));
-                return isNaN(d) ? null : d;
-            } catch (e) { return null; }
-        },
-        updateUI(dist, city) {
-            const root = document.documentElement;
-            const isInvalid = dist === null || isNaN(dist);
-            const blur = isInvalid ? 0 : Math.min(dist / 1200, 3);
-            const shadow = isInvalid ? 12 : Math.max(20 - (dist / 300), 8);
-            
-            gsap.to(root, {
-                '--blur-strength': blur + 'px',
-                '--shadow-intensity': shadow + 'px',
-                duration: 3,
-                ease: "power2.out"
-            });
-            
-            const footer = document.getElementById('footer-text');
-            if (footer) {
-                gsap.to(root, {
-                    '--text-base-opacity': 0,
-                    duration: 0.6,
-                    ease: "power2.inOut",
-                    onComplete: () => {
-                        const distStr = isInvalid ? '遥遥' : Math.round(dist) + '公里';
-                        footer.innerHTML = '<span>君在\x5B' + city + '\x5D，相距' + distStr + '。</span><br><span>© 卜仙堂 · 道隐无名</span>';
-                        gsap.to(root, {
-                            '--text-base-opacity': 0.85, 
-                            duration: 0.8,
-                            ease: "power2.out"
-                        });
-                    }
-                });
-            }
+        if (sunD.code === '200') {
+          weatherData.sunrise = Math.floor(new Date(sunD.sunrise).getTime() / 1000);
+          weatherData.sunset = Math.floor(new Date(sunD.sunset).getTime() / 1000);
         }
-    };
-    const Interaction = {
-        init() {
-            this.setupCursor();
-            this.setupLoading();
-        },
-        setupCursor() {
-            const dot = document.getElementById('cursor-dot');
-            const trail = document.getElementById('cursor-trail');
-            let mouseX = window.innerWidth / 2, mouseY = window.innerHeight / 2;
-            let dotX = mouseX, dotY = mouseY;
-            let trailX = mouseX, trailY = mouseY;
-
-            if (window.matchMedia("(pointer: fine)").matches) {
-                window.addEventListener('mousemove', (e) => {
-                    mouseX = e.clientX;
-                    mouseY = e.clientY;
-                });
-
-                document.querySelectorAll('a').forEach(el => {
-                    el.addEventListener('mouseenter', () => {
-                        gsap.to(dot, { scale: 3, backgroundColor: 'transparent', border: '1px solid var(--theme-color)', duration: 0.3 });
-                        gsap.to(trail, { opacity: 0, duration: 0.3 });
-                    });
-                    el.addEventListener('mouseleave', () => {
-                        gsap.to(dot, { scale: 1, backgroundColor: 'var(--theme-color)', border: 'none', duration: 0.3 });
-                        gsap.to(trail, { opacity: 0.2, duration: 0.3 });
-                    });
-                });
-
-                const render = () => {
-                    dotX += (mouseX - dotX) * 0.2;
-                    dotY += (mouseY - dotY) * 0.2;
-                    dot.style.left = dotX + 'px';
-                    dot.style.top = dotY + 'px';
-
-                    trailX += (mouseX - trailX) * 0.1;
-                    trailY += (mouseY - trailY) * 0.1;
-                    trail.style.left = trailX + 'px';
-                    trail.style.top = trailY + 'px';
-
-                    requestAnimationFrame(render);
-                };
-                render();
-            }
-        },
-        setupLoading() {
-            const tl = gsap.timeline();
-            tl.to('.ink-spot', { width: '400vw', height: '400vw', opacity: 0, duration: 2.5, ease: "expo.inOut" })
-              .to('#ink-loader', { opacity: 0, duration: 1 }, "-=1")
-              .to('.content-wrapper', { opacity: 1, y: 0, duration: 1.5, ease: "power3.out" }, "-=1.5")
-              .set('#ink-loader', { display: 'none' });
-
-            // 5秒强制兜底，确保UI可见
-            setTimeout(() => {
-                const loader = document.getElementById('ink-loader');
-                if (loader && loader.style.display !== 'none') {
-                    gsap.to('#ink-loader', { opacity: 0, duration: 1, onComplete: () => loader.style.display = 'none' });
-                    gsap.to('.content-wrapper', { opacity: 1, y: 0, duration: 1 });
-                }
-            }, 5000);
+      } else if (env.OPENWEATHER_KEY) {
+        const url = 'https://api.openweathermap.org/data/2.5/weather?lat='.concat(geo.lat, '&lon=', geo.lon, '&appid=', env.OPENWEATHER_KEY, '&units=metric');
+        const res = await fetch(url);
+        const data = await res.json();
+        if (data.cod === 200) {
+          weatherData.temp = data.main.temp;
+          weatherData.description = data.weather[0].description;
+          weatherData.windSpeed = data.wind.speed;
+          weatherData.sunrise = data.sys.sunrise;
+          weatherData.sunset = data.sys.sunset;
+          weatherData.offset = data.timezone;
+          const m = data.weather[0].main;
+          const map = {
+            'Rain': 'Rain', 'Drizzle': 'Rain', 'Snow': 'Snow',
+            'Thunderstorm': 'Storm', 'Tornado': 'Storm', 'Squall': 'Storm',
+            'Clouds': 'Cloudy', 'Mist': 'Cloudy', 'Smoke': 'Cloudy', 'Haze': 'Cloudy', 'Dust': 'Cloudy', 'Fog': 'Cloudy', 'Sand': 'Cloudy', 'Ash': 'Cloudy'
+          };
+          weatherData.condition = map[m] || 'Clear';
         }
-    };
+      }
+    } catch (e) { console.error('Weather error:', e); }
 
-    ThemeEngine.init();
-    PresenceEngine.init();
-    Interaction.init();
-</script>
+    const htmlParts = [
+      '<!DOCTYPE html><html lang=\x22zh-CN\x22><head><meta charset=\x22UTF-8\x22><meta name=\x22viewport\x22 content=\x22width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover\x22><title>卜仙堂 · 时空共鸣</title><script>',
+      'window.INITIAL_GEO = '.concat(JSON.stringify(geo), ';'),
+      'window.INITIAL_WEATHER = '.concat(JSON.stringify(weatherData), ';'),
+      'window.SERVER_TS = '.concat(Date.now(), ';'),
+      '</script><link rel=\x22stylesheet\x22 href=\x22https://cdn.jsdelivr.net/npm/lxgw-wenkai-screen-webfont@1.1.0/style.css\x22><style>',
+      ':root {--theme-color:#1E2732;--night-opacity:0;--ink-depth:#1E2732;--text-base-opacity:0.85;--blur-strength:0px;--shadow-intensity:12px;--vignette-opacity:0.04;--weather-brightness:1;--weather-saturation:1;--turbulence-freq:0.002;--turbulence-scale:30;--atmosphere-opacity:0.05;--tyndall-opacity:0;--hover-accent:#D58A46;--z-paper:1;--z-atmosphere:2;--z-tyndall:3;--z-vignette:4;--z-night:5;--z-content:10;--z-cursor:100;--z-loader:1000;}',
+      '* {margin:0;padding:0;box-sizing:border-box;cursor:none!important;}',
+      'body {background-color:#F7F3F0;color:var(--ink-depth);font-family:\x22LXGW WenKai Screen\x22,serif;overflow:hidden;height:100vh;width:100vw;transition:color 2.5s ease;}',
+      '.bg-layer {position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;user-select:none;}',
+      '#paper-texture {z-index:var(--z-paper);opacity:0.6;background-image:url(\x22data:image/svg+xml,%3Csvg viewBox=\x270 0 200 200\x27 xmlns=\x27http://www.w3.org/2000/svg\x27%3E%3Cfilter id=\x27noise\x27%3E%3CfeTurbulence type=\x27fractalNoise\x27 baseFrequency=\x270.85\x27 numOctaves=\x274\x27 stitchTiles=\x27stitch\x27/%3E%3C/filter%3E%3Crect width=\x27100%25\x27 height=\x27100%25\x27 filter=\x27url(%23noise)\x27/%3E%3C/svg%3E\x22);}',
+      '#atmosphere-layer {z-index:var(--z-atmosphere);opacity:var(--atmosphere-opacity);mix-blend-mode:multiply;filter:brightness(var(--weather-brightness)) saturate(var(--weather-saturation));}',
+      '#tyndall-layer {z-index:var(--z-tyndall);opacity:var(--tyndall-opacity);background:linear-gradient(135deg,rgba(255,255,255,0.4) 0%,transparent 50%,rgba(255,255,255,0.2) 100%);mask-image:radial-gradient(circle at 20% 20%,black,transparent 80%);}',
+      '#vignette {z-index:var(--z-vignette);background:radial-gradient(circle,transparent 40%,rgba(0,0,0,var(--vignette-opacity)) 100%);}',
+      '#night-overlay {z-index:var(--z-night);background-color:#0A0F14;opacity:var(--night-opacity);transition:opacity 3s ease;}',
+      '.content-wrapper {position:relative;z-index:var(--z-content);height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:2rem;opacity:0;transform:translateY(20px);filter:blur(var(--blur-strength));pointer-events:none;transition:opacity 1.5s ease;}',
+      '.content-wrapper > * {pointer-events:auto;}header {text-align:center;margin-bottom:4rem;}',
+      'h1 {font-family:\x22Source Han Serif SC\x22,\x22Source Han Serif\x22,serif;font-weight:900;font-size:clamp(3rem,10vw,6rem);letter-spacing:0.5rem;color:var(--theme-color);text-shadow:0 0 var(--shadow-intensity) rgba(0,0,0,0.1);margin-bottom:1rem;}',
+      '.status-bar {font-size:0.9rem;letter-spacing:0.2rem;opacity:var(--text-base-opacity);border-top:1px solid var(--theme-color);border-bottom:1px solid var(--theme-color);padding:0.5rem 2rem;margin-top:1rem;}',
+      'main {display:flex;gap:4rem;margin-bottom:4rem;}',
+      '.nav-link {text-decoration:none;color:var(--ink-depth);font-size:1.2rem;writing-mode:vertical-rl;letter-spacing:0.8rem;transition:all 0.6s cubic-bezier(.22,1,.36,1);padding:1rem 0.5rem;border-left:1px solid transparent;}',
+      '.nav-link:hover {color:var(--hover-accent);border-left:1px solid var(--hover-accent);transform:translateY(-10px);}',
+      'footer {position:absolute;bottom:3rem;font-size:0.8rem;letter-spacing:0.1rem;opacity:var(--text-base-opacity);text-align:center;width:100%;}',
+      '#cursor-dot {position:fixed;width:8px;height:8px;background-color:var(--theme-color);border-radius:50%;z-index:var(--z-cursor);pointer-events:none;transform:translate(-50%,-50%);}',
+      '#cursor-trail {position:fixed;width:40px;height:40px;border:1px solid var(--theme-color);border-radius:50%;z-index:calc(var(--z-cursor) - 1);pointer-events:none;opacity:0.2;transform:translate(-50%,-50%);}',
+      '#ink-loader {position:fixed;top:0;left:0;width:100%;height:100%;background-color:#F7F3F0;z-index:var(--z-loader);display:flex;justify-content:center;align-items:center;pointer-events:auto;transition:opacity 1s ease;}',
+      '.ink-spot {width:0;height:0;background-color:#1E2732;border-radius:50%;filter:blur(40px);}',
+      '</style></head><body>',
+      '<div id=\x22paper-texture\x22 class=\x22bg-layer\x22 aria-hidden=\x22true\x22></div><div id=\x22vignette\x22 class=\x22bg-layer\x22 aria-hidden=\x22true\x22></div><div id=\x22night-overlay\x22 class=\x22bg-layer\x22 aria-hidden=\x22true\x22></div><div id=\x22tyndall-layer\x22 class=\x22bg-layer\x22 aria-hidden=\x22true\x22></div>',
+      '<svg id=\x22atmosphere-layer\x22 class=\x22bg-layer\x22 aria-hidden=\x22true\x22><filter id=\x22weather-filter\x22><feTurbulence id=\x22turb-wave\x22 type=\x22fractalNoise\x22 baseFrequency=\x220.002\x22 numOctaves=\x222\x22 seed=\x225\x22 /><feDisplacementMap id=\x22disp-map\x22 in=\x22SourceGraphic\x22 scale=\x2230\x22 /></filter><rect width=\x22100%\x22 height=\x22100%\x22 filter=\x22url(#weather-filter)\x22 /></svg>',
+      '<div id=\x22ink-loader\x22 aria-hidden=\x22true\x22><div class=\x22ink-spot\x22></div></div><div id=\x22cursor-dot\x22 aria-hidden=\x22true\x22></div><div id=\x22cursor-trail\x22 aria-hidden=\x22true\x22></div>',
+      '<div class=\x22content-wrapper\x22 role=\x22main\x22><header><h1>卜仙堂</h1><div id=\x22status-bar\x22 class=\x22status-bar\x22 role=\x22status\x22>此间 · 物候生成中</div></header><main role=\x22navigation\x22 aria-label=\x22主导航\x22><a href=\x22#\x22 class=\x22nav-link\x22>山门</a><a href=\x22#\x22 class=\x22nav-link\x22>经藏</a><a href=\x22#\x22 class=\x22nav-link\x22>坛场</a><a href=\x22#\x22 class=\x22nav-link\x22>归墟</a></main><footer><div id=\x22footer-text\x22>正在感应时空共鸣...</div></footer></div>',
+      '<script src=\x22https://cdn.jsdelivr.net/npm/gsap@3.12.2/dist/gsap.min.js\x22></script><script>',
+      'function hideLoaderFallback(){const l=document.getElementById(\x22ink-loader\x22),w=document.querySelector(\x22.content-wrapper\x22);if(l)l.style.display=\x22none\x22;if(w){w.style.opacity=\x221\x22;w.style.transform=\x22none\x22;w.style.pointerEvents=\x22auto\x22;}}setTimeout(hideLoaderFallback,5000);',
+      '</script><script type=\x22module\x22>',
+      'import { SolarDay } from \x22https://cdn.jsdelivr.net/npm/tyme4ts@1.0.4/dist/lib/index.mjs\x22;',
+      'const CONFIG = {DOJO_COORD: { lat: 30.24, lon: 120.15 },PENTAD_MAP: { \x22东风解冻\x22: {name:\x22东风解冻\x22,color:\x22#E0F0F8\x22,phrase:\x22立春初候 · 阳和启渐\x22}, \x22蛰虫始振\x22: {name:\x22蛰虫始振\x22,color:\x22#B8D2C7\x22,phrase:\x22立春二候 · 潜灵动觉\x22}, \x22鱼陟负冰\x22: {name:\x22鱼陟负冰\x22,color:\x22#9AB9C1\x22,phrase:\x22立春三候 · 坚冰融澌\x22}, \x22獭祭鱼\x22: {name:\x22獭祭鱼\x22,color:\x22#88B0B0\x22,phrase:\x22雨水初候 · 灵獭感时\x22}, \x22鸿雁来\x22: {name:\x22鸿雁来\x22,color:\x22#A8C69F\x22,phrase:\x22雨水二候 · 候鸟北归\x22}, \x22草木萌动\x22: {name:\x22草木萌动\x22,color:\x22#79B47C\x22,phrase:\x22雨水三候 · 卉木苏醒\x22}, \x22桃始华\x22: {name:\x22桃始华\x22,color:\x22#F6CEDE\x22,phrase:\x22惊蛰初候 · 绯桃凝露\x22}, \x22仓庚鸣\x22: {name:\x22仓庚鸣\x22,color:\x22#FFE9A7\x22,phrase:\x22惊蛰二候 · 黄鹂悦春\x22}, \x22鹰化为鸠\x22: {name:\x22鹰化为鸠\x22,color:\x22#C7D2D4\x22,phrase:\x22惊蛰三候 · 宿鸟化灵\x22}, \x22玄鸟至\x22: {name:\x22玄鸟至\x22,color:\x22#4A5B6D\x22,phrase: \x22春分初候 · 归燕掠影\x22}, \x22雷乃发声\x22: {name: \x22雷乃发声\x22, color: \x22#A5B6C5\x22, phrase: \x22春分二候 · 震宫启奏\x22}, \x22始电\x22: {name: \x22始电\x22, color: \x22#FFFACD\x22, phrase: \x22春分三候 · 灵光瞬现\x22}, \x22桐始华\x22: {name: \x22桐始华\x22, color: \x22#EBD3E8\x22, phrase: \x22清明初候 · 桐英含芳\x22}, \x22田鼠化为鴽\x22: {name: \x22田鼠化为鴽\x22, color: \x22#B7B1A5\x22, phrase: \x22清明二候 · 隐灵换形\x22}, \x22虹始见\x22: {name: \x22虹始见\x22, color: \x22#A9D8E6\x22, phrase: \x22清明三候 · 霓虹映射\x22}, \x22萍始生\x22: {name: \x22萍始生\x22, color: \x22#7FB1A6\x22, phrase: \x22谷雨初候 · 浮翠点水\x22}, \x22鸣鸠拂其羽\x22: {name: \x22鸣鸠拂其羽\x22, color: \x22#9A8A78\x22, phrase: \x22谷雨二候 · 鸣鸠振羽\x22}, \x22戴胜降于桑\x22: {name: \x22戴胜降于桑\x22, color: \x22#E8C09E\x22, phrase: \x22谷雨三候 · 戴胜春蚕\x22}, \x22蝼蝈鸣\x22: {name: \x22蝼蝈鸣\x22, color: \x22#B5C4B1\x22, phrase: \x22立夏初候 · 鸣虫闹夏\x22}, \x22蚯蚓出\x22: {name: \x22蚯蚓出\x22, color: \x22#8E7463\x22, phrase: \x22立夏二候 · 潜蛰出幽\x22}, \x22王瓜生\x22: {name: \x22王瓜生\x22, color: \x22#5C8A67\x22, phrase: \x22立夏三候 · 蔓延葱郁\x22}, \x22苦菜秀\x22: {name: \x22苦菜秀\x22, color: \x22#D9E6A7\x22, phrase: \x22小满初候 · 苦茗留香\x22}, \x22靡草死\x22: {name: \x22靡草死\x22, color: \x22#A7A37E\x22, phrase: \x22小满二候 · 阴气渐消\x22}, \x22麦秋至\x22: {name: \x22麦秋至\x22, color: \x22#EDD98F\x22, phrase: \x22小满三候 · 麦浪翻金\x22}, \x22螳螂生\x22: {name: \x22螳螂生\x22, color: \x22#99BC71\x22, phrase: \x22芒种初候 · 螳螂舞翠\x22}, \x22鵙始鸣\x22: {name: \x22鵙始鸣\x22, color: \x22#A89B87\x22, phrase: \x22芒种二候 · 伯劳啼鸣\x22}, \x22反舌无声\x22: {name: \x22反舌无声\x22, color: \x22#818D98\x22, phrase: \x22芒种三候 · 百舌默唱\x22}, \x22鹿角解\x22: {name: \x22鹿角解\x22, color: \x22#D2B48C\x22, phrase: \x22夏至初候 · 灵鹿退角\x22}, \x22蜩始鸣\x22: {name: \x22蜩始鸣\x22, color: \x22#C9AE88\x22, phrase: \x22夏至二候 · 寒蝉初震\x22}, \x22半夏生\x22: {name: \x22半夏生\x22, color: \x22#88A070\x22, phrase: \x22夏至三候 · 灵药萌生\x22}, \x22温风至\x22: {name: \x22温风至\x22, color: \x22#F9D8AE\x22, phrase: \x22小暑初候 · 炎风拂栏\x22}, \x22蟋蟀居壁\x22: {name: \x22蟋蟀居壁\x22, color: \x22#C0A180\x22, phrase: \x22小暑二候 · 蛩音在堂\x22}, \x22鹰始挚\x22: {name: \x22鹰始挚\x22, color: \x22#8E9EAB\x22, phrase: \x22小暑三候 · 苍鹰击空\x22}, \x22腐草为萤\x22: {name: \x22腐草为萤\x22, color: \x22#E0E5DF\x22, phrase: \x22大暑初候 · 萤火熠熠\x22}, \x22土润溽暑\x22: {name: \x22土润溽暑\x22, color: \x22#D2B48C\x22, phrase: \x22大暑二候 · 湿蒸云烟\x22}, \x22大雨时行\x22: {name: \x22大雨时行\x22, color: \x22#7B90AD\x22, phrase: \x22大暑三候 · 骤雨涤尘\x22}, \x22凉风至\x22: {name: \x22凉风至\x22, color: \x22#D9E6E9\x22, phrase: \x22立秋初候 · 金风荐爽\x22}, \x22白露降\x22: {name: \x22白露降\x22, color: \x22#F2F2F2\x22, phrase: \x22立秋二候 · 晨露凝白\x22}, \x22寒蝉鸣\x22: {name: \x22寒蝉鸣\x22, color: \x22#D6C6AF\x22, phrase: \x22立秋三候 · 悲蝉咏秋\x22}, \x22鹰乃祭鸟\x22: {name: \x22鹰乃祭鸟\x22, color: \x22#8B8C8E\x22, phrase: \x22处暑初候 · 雄鹰陈禽\x22}, \x22天地始肃\x22: {name: \x22天地始肃\x22, color: \x22#C5D1C9\x22, phrase: \x22处暑二候 · 萧条万境\x22}, \x22禾乃登\x22: {name: \x22禾乃登\x22, color: \x22#EBD38D\x22, phrase: \x22处暑三候 · 五谷丰稔\x22}, \x22鸿雁来\x22: {name: \x22鸿雁来\x22, color: \x22#A5BCC2\x22, phrase: \x22白露初候 · 远宾随风\x22}, \x22玄鸟归\x22: {name: \x22玄鸟归\x22, color: \x22#5E6671\x22, phrase: \x22白露二候 · 燕辞故巢\x22}, \x22群鸟养羞\x22: {name: \x22群鸟養羞\x22, color: \x22#D7C4BB\x22, phrase: \x22白露三候 · 众鸟蓄冬\x22}, \x22雷始收声\x22: {name: \x22雷始收声\x22, color: \x22#8FA2AD\x22, phrase: \x22秋分初候 · 惊雷敛迹\x22}, \x22蛰虫坯户\x22: {name: \x22蛰虫坯户\x22, color: \x22#B5A691\x22, phrase: \x22秋分二候 · 潜灵封户\x22}, \x22水始涸\x22: {name: \x22水始涸\x22, color: \x22#CEDCE3\x22, phrase: \x22秋分三候 · 泽枯水涸\x22}, \x22鸿雁来宾\x22: {name: \x22鸿雁来宾\x22, color: \x22#B8CBD0\x22, phrase: \x22寒露初候 · 宾雁南翔\x22}, \x22雀入大水为蛤\x22: {name: \x22雀入大水为蛤\x22, color: \x22#D6D1C4\x22, phrase: \x22寒露二候 · 海变蜃景\x22}, \x22菊有黄华\x22: {name: \x22菊有黄华\x22, color: \x22#FFD700\x22, phrase: \x22寒露三候 · 霜菊绽蕊\x22}, \x22豺乃祭兽\x22: {name: \x22豺乃祭兽\x22, color: \x22#A89688\x22, phrase: \x22霜降初候 · 豺狼报本\x22}, \x22草木黄落\x22: {name: \x22草木黄落\x22, color: \x22#DAA520\x22, phrase: \x22霜降二候 · 凋落辞枝\x22}, \x22蛰虫咸俯\x22: {name: \x22蛰虫咸俯\x22, color: \x22#8B7E66\x22, phrase: \x22霜降三候 · 潜灵冬安\x22}, \x22水始冰\x22: {name: \x22水始冰\x22, color: \x22#D4EBF2\x22, phrase: \x22立冬初候 · 寒凝碧水\x22}, \x22地始冻\x22: {name: \x22地始冻\x22, color: \x22#B0C4DE\x22, phrase: \x22立冬二候 · 阴气封原\x22}, \x22雉入大水为蜃\x22: {name: \x22雉入大水为蜃\x22, color: \x22#A9B9CB\x22, phrase: \x22立冬三候 · 潜龙化幻\x22}, \x22虹藏不见\x22: {name: \x22虹藏不见\x22, color: \x22#708090\x22, phrase: \x22小雪初候 · 霓虹隐匿\x22}, \x22天气上升地气下降\x22: {name: \x22天气上升地气下降\x22, color: \x22#DCDCDC\x22, phrase: \x22小雪二候 · 天地不交\x22}, \x22闭塞而成冬\x22: {name: \x22闭塞而成冬\x22, color: \x22#E5E5E5\x22, phrase: \x22小雪三候 · 万类冬眠\x22}, \x22鹖鴠不鸣\x22: {name: \x22鹖鴠不鸣\x22, color: \x22#808080\x22, phrase: \x22大雪初候 · 寒鸟敛声\x22}, \x22虎始交\x22: {name: \x22虎始交\x22, color: \x22#D2691E\x22, phrase: \x22大雪二候 · 阴极阳萌\x22}, \x22荔挺出\x22: {name: \x22荔挺出\x22, color: \x22#9ACD32\x22, phrase: \x22大雪三候 · 兰荔萌芽\x22}, \x22蚯蚓结\x22: {name: \x22蚯蚓结\x22, color: \x22#8B4513\x22, phrase: \x22冬至初候 · 潜灵缩蜷\x22}, \x22麋角解\x22: {name: \x22麋角解\x22, color: \x22#F5DEB3\x22, phrase: \x22冬至二候 · 灵麋退角\x22}, \x22水泉动\x22: {name: \x22水泉动\x22, color: \x22#B0E0E6\x22, phrase: \x22冬至三候 · 温泉复涌\x22}, \x22雁北乡\x22: {name: \x22雁北乡\x22, color: \x22#AFEEEE\x22, phrase: \x22小寒初候 · 阳和初回\x22}, \x22鹊始巢\x22: {name: \x22鹊始巢\x22, color: \x22#DEB887\x22, phrase: \x22小寒二候 · 喜鹊筑巢\x22}, \x22雉始雊\x22: {name: \x22雉始雊\x22, color: \x22#CD853F\x22, phrase: \x22小寒三候 · 山雉啼鸣\x22}, \x22鸡始乳\x22: {name: \x22鸡始乳\x22, color: \x22#F2F2F2\x22, phrase: \x22大寒初候 · 幼鸡破壳\x22}, \x22征鸟厉疾\x22: {name: \x22征鸟厉疾\x22, color: \x22#FFFFFF\x22, phrase: \x22大寒二候 · 猛禽巡猎\x22}, \x22水泽腹坚\x22: {name: \x22水泽腹坚\x22, color: \x22#E6E1D5\x22, phrase: \x22大寒三候 · 厚冰载途\x22}}}; const WeatherEngine = {init() {this.data = window.INITIAL_WEATHER || {};this.applyWeather();this.animateAtmosphere();this.setupPerformanceMonitor();},applyWeather() {const root = document.documentElement, condition = this.data.condition || \x22Clear\x22;let atmosphereOpacity = 0.05, blur = 0, brightness = 1, saturation = 1, shadow = 12, turbFreq = 0.002, turbScale = 30, vignette = 0.04, tyndall = 0;if (condition === \x22Clear\x22) { brightness = 1.1; atmosphereOpacity = 0.02; vignette = 0.02; tyndall = 0.08; } else if (condition === \x22Cloudy\x22) { atmosphereOpacity = 0.4; blur = 20; saturation = 0.8; turbFreq = 0.001; } else if (condition === \x22Rain\x22 || condition === \x22Snow\x22) { atmosphereOpacity = 0.6; brightness = 0.85; saturation = 0.9; turbScale = 50; if (window.gsap) gsap.to(root, { \x22--night-opacity\x22: 0.2, duration: 3 }); } else if (condition === \x22Storm\x22) { atmosphereOpacity = 0.7; shadow = 30; turbScale = 80; this.stormFlash(); }if (this.data.windSpeed > 10) { turbFreq = 0.01; }if (window.gsap) { gsap.to(root, {\x22--atmosphere-opacity\x22: atmosphereOpacity,\x22--blur-strength\x22: blur.toString().concat(\x22px\x22),\x22--weather-brightness\x22: brightness,\x22--weather-saturation\x22: saturation,\x22--shadow-intensity\x22: shadow.toString().concat(\x22px\x22),\x22--turbulence-freq\x22: turbFreq,\x22--turbulence-scale\x22: turbScale,\x22--vignette-opacity\x22: vignette,\x22--tyndall-opacity\x22: tyndall,duration: 3,ease: \x22power2.out\x22}); } else { root.style.setProperty(\x22--atmosphere-opacity\x22, atmosphereOpacity); }},stormFlash() {if (window.gsap) { gsap.to(document.documentElement, {\x22--weather-brightness\x22: 2,duration: 0.1,repeat: 3,yoyo: true,onComplete: () => {gsap.to(document.documentElement, {\x22--weather-brightness\x22: 0.8, duration: 1 });}}); }},animateAtmosphere() {if (window.gsap) { gsap.to(\x22#turb-wave\x22, { attr: { baseFrequency: \x220.003 0.005\x22 }, duration: 15, repeat: -1, yoyo: true, ease: \x22sine.inOut\x22 }); } else { const turb = document.getElementById(\x22turb-wave\x22); if (turb) { let baseSeed = 5; setInterval(() => { baseSeed = (baseSeed + 1) % 1000; turb.setAttribute(\x22seed\x22, baseSeed); }, 3000); } }},setupPerformanceMonitor() {let lastTime = performance.now(), frames = 0, degraded = 0;const check = (now) => {frames++;if (now > lastTime + 1000) {const fps = Math.round((frames * 1000) / (now - lastTime));if (fps < 40 && degraded === 0) { this.degradePerformance(1); degraded = 1; } else if (fps < 20 && degraded === 1) { this.degradePerformance(2); degraded = 2; }frames = 0; lastTime = now;}if (degraded < 2) requestAnimationFrame(check);};requestAnimationFrame(check);},degradePerformance(level) {const turb = document.getElementById(\x22turb-wave\x22), disp = document.getElementById(\x22disp-map\x22), layer = document.getElementById(\x22atmosphere-layer\x22);if (level === 1) { if (turb) turb.setAttribute(\x22numOctaves\x22, \x221\x22); if (disp) disp.setAttribute(\x22scale\x22, \x220\x22); } else if (level === 2) { if (layer) layer.style.display = \x22none\x22; const tyndall = document.getElementById(\x22tyndall-layer\x22); if (tyndall) tyndall.style.display = \x22none\x22; }}}; const ThemeEngine = {init() {this.update();setInterval(() => this.update(), 3600000);this.startBreathing();},update() {const timeOffset = window.SERVER_TS ? (window.SERVER_TS - Date.now()) : 0;const now = new Date(Date.now() + timeOffset);const info = this.getPentadInfo(now), weather = window.INITIAL_WEATHER || {};const curTS = Math.floor(now.getTime() / 1000);let nightOpacity = 0;if (weather.sunset && weather.sunrise) {if (curTS >= weather.sunset || curTS < weather.sunrise) nightOpacity = 0.4;}this.applyTheme(info.color, nightOpacity);this.updateStatusBar(info.name, info.phrase);},getPentadInfo(date) {try {const pd = SolarDay.fromYmd(date.getFullYear(), date.getMonth() + 1, date.getDate()).getPhenologyDay();const name = pd.getPhenology().getName();if (CONFIG.PENTAD_MAP[name]) return CONFIG.PENTAD_MAP[name];for (let k in CONFIG.PENTAD_MAP) { if (name.includes(k) || k.includes(name)) return CONFIG.PENTAD_MAP[k]; }} catch (e) { console.error(\x22Tyme error:\x22, e); }return CONFIG.PENTAD_MAP[\x22东风解冻\x22];},applyTheme(color, nightOpacity) {const root = document.documentElement, rgb = this.hexToRgb(color), brightness = (rgb.r * 299 + rgb.g * 587 + rgb.b * 114) / 1000;const inkColor = brightness < 165 ? \x22#FFFFFF\x22 : \x22#1E2732\x22;let hoverColor = brightness < 165 ? \x22#D58A46\x22 : this.adjustColor(color, -30);if (window.gsap) { gsap.to(root, {\x22--theme-color\x22: color,\x22--night-opacity\x22: nightOpacity,\x22--ink-depth\x22: inkColor,\x22--hover-accent\x22: hoverColor,duration: 2.5,ease: \x22sine.inOut\x22}); } else { root.style.setProperty(\x22--theme-color\x22, color); root.style.setProperty(\x22--ink-depth\x22, inkColor); }},adjustColor(hex, amt) {let usePound = hex[0] === \x22#\x22;if (usePound) hex = hex.slice(1);let num = parseInt(hex, 16), r = (num >> 16) + amt, g = (num >> 8 & 0x00FF) + amt, b = (num & 0x0000FF) + amt;r = Math.max(0, Math.min(255, r)); g = Math.max(0, Math.min(255, g)); b = Math.max(0, Math.min(255, b));return (usePound ? \x22#\x22 : \x22\x22).concat((r << 16 | g << 8 | b).toString(16).padStart(6, \x220\x22));},hexToRgb(hex) {const result = /^#?([a-f0-9]{2})([a-f0-9]{2})([a-f0-9]{2})$/i.exec(hex);return result ? {r: parseInt(result[1], 16),g: parseInt(result[2], 16),b: parseInt(result[3], 16)} : { r: 30, g: 39, b: 50 };},updateStatusBar(name, phrase) {const bar = document.getElementById(\x22status-bar\x22);if (bar) {const weather = window.INITIAL_WEATHER || {}, desc = weather.description || "", cond = weather.condition || \x22Clear\x22, timeOffset = window.SERVER_TS ? (window.SERVER_TS - Date.now()) : 0, now = new Date(Date.now() + timeOffset);const offset = weather.offset || 0;const locDate = new Date(now.getTime() + (offset * 1000));const hour = locDate.getUTCHours();const curTS = Math.floor(now.getTime()/1000);const isNight = weather.sunset && weather.sunrise ? (curTS >= weather.sunset || curTS < weather.sunrise) : (hour >= 18 || hour < 6);let timeDesc = \x22昼间\x22, advice = \x22宜研习\x22;if (isNight) { timeDesc = \x22幽冥\x22; advice = (cond === \x22Clear\x22) ? \x22宜观星\x22 : \x22宜冥想\x22; } else if (hour >= 5 && hour < 9) { timeDesc = \x22晨光\x22; advice = (cond === \x22Rain\x22 || cond === \x22Snow\x22) ? \x22宜诵读\x22 : \x22宜晨省\x22; } else if (hour >= 17 && hour < 19) { timeDesc = \x22黄昏\x22; advice = (cond === \x22Storm\x22) ? \x22宜闭关\x22 : \x22宜敛息\x22; } else { advice = (cond === \x22Rain\x22) ? \x22宜烹茶\x22 : (cond === \x22Snow\x22 ? \x22宜赏雪\x22 : \x22宜寻幽\x22); }bar.textContent = \x22此间 [\x22.concat(name, \x22 · \x22, phrase, \x22] · \x22).concat(desc, \x22 · \x22).concat(timeDesc, \x22 · \x22).concat(advice);}},startBreathing() {if (window.gsap) { gsap.timeline({ repeat: -1, yoyo: true }).to(document.documentElement, { \x22--text-base-opacity\x22: 0.4, duration: 6, ease: \x22sine.inOut\x22 });gsap.to(document.documentElement, { \x22--vignette-opacity\x22: 0.08, duration: 15, repeat: -1, yoyo: true, ease: \x22sine.inOut\x22 }); }}}; const PresenceEngine = {async init() {const pos = await this.getLocation();const dist = (pos && pos.lat && pos.lon) ? this.calculateDistance(pos.lat, pos.lon, CONFIG.DOJO_COORD.lat, CONFIG.DOJO_COORD.lon) : null;this.updateUI(dist, pos ? (pos.isCN ? pos.city : (pos.city_name || pos.city || \x22海外\x22)) : \x22未知\x22);},async getLocation() {if (window.INITIAL_GEO && window.INITIAL_GEO.lat && window.INITIAL_GEO.lon) return { ...window.INITIAL_GEO, ts: Date.now() };const cached = localStorage.getItem(\x22bxt_location\x22);if (cached) { const data = JSON.parse(cached); if (Date.now() - data.ts < 86400000) return data; }try {const res = await fetch(\x22https://ipwho.is/\x22);const data = await res.json();if (data.success) { const result = { lat: data.latitude, lon: data.longitude, city: data.city, ts: Date.now(), isCN: data.country_code === \x22CN\x22 }; localStorage.setItem(\x22bxt_location\x22, JSON.stringify(result)); return result; }} catch (e) {}return null;},calculateDistance(lat1, lon1, lat2, lon2) {try {const R = 6371, dLat = (lat2 - lat1) * Math.PI / 180, dLon = (lon2 - lon1) * Math.PI / 180, a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);return 2 * R * Math.asin(Math.sqrt(a));} catch (e) { return null; }},updateUI(dist, city) {const root = document.documentElement, isInvalid = dist === null || isNaN(dist), blur = isInvalid ? 0 : Math.min(dist / 1200, 3), shadow = isInvalid ? 12 : Math.max(20 - (dist / 300), 8);if (window.gsap) { gsap.to(root, {\x22--blur-strength\x22: blur.toString().concat(\x22px\x22),\x22--shadow-intensity\x22: shadow.toString().concat(\x22px\x22),duration: 3,ease: \x22power2.out\x22}); }const footer = document.getElementById(\x22footer-text\x22);if (footer) {if (window.gsap) { gsap.to(root, {\x22--text-base-opacity\x22: 0,duration: 0.6,onComplete: () => {const distStr = isInvalid ? \x22遥遥\x22 : Math.round(dist).toString().concat(\x22公里\x22);footer.textContent = \x22君在 [\x22.concat(city, \x22]，相距 \x22).concat(distStr, \x22。 © 卜仙堂 · 道隐无名\x22);gsap.to(root, { \x22--text-base-opacity\x22: 0.85, duration: 0.8 });}}); } else { footer.textContent = \x22君在 [\x22.concat(city, \x22]\x22); } }}}; const Interaction = {init() {this.setupCursor();this.setupLoading();},setupCursor() {const dot = document.getElementById(\x22cursor-dot\x22), trail = document.getElementById(\x22cursor-trail\x22);let mouseX = window.innerWidth / 2, mouseY = window.innerHeight / 2, dotX = mouseX, dotY = mouseY, trailX = mouseX, trailY = mouseY;if (window.matchMedia(\x22(pointer: fine)\x22).matches) {window.addEventListener(\x22mousemove\x22, (e) => { mouseX = e.clientX; mouseY = e.clientY; });document.querySelectorAll(\x22a\x22).forEach(el => {el.addEventListener(\x22mouseenter\x22, () => {if (window.gsap) { gsap.to(dot, { scale: 3, backgroundColor: \x22transparent\x22, border: \x221px solid var(--theme-color)\x22, duration: 0.3 });gsap.to(trail, { opacity: 0, duration: 0.3 }); }});el.addEventListener(\x22mouseleave\x22, () => {if (window.gsap) { gsap.to(dot, { scale: 1, backgroundColor: \x22var(--theme-color)\x22, border: \x22none\x22, duration: 0.3 });gsap.to(trail, { opacity: 0.2, duration: 0.3 }); }});});const render = () => {dotX += (mouseX - dotX) * 0.2; dotY += (mouseY - dotY) * 0.2;dot.style.left = dotX.toString().concat(\x22px\x22); dot.style.top = dotY.toString().concat(\x22px\x22);trailX += (mouseX - trailX) * 0.1; trailY += (mouseY - trailY) * 0.1;trail.style.left = trailX.toString().concat(\x22px\x22); trail.style.top = trailY.toString().concat(\x22px\x22);requestAnimationFrame(render);};render();}},setupLoading() {const hideLoader = () => {const loader = document.getElementById(\x22ink-loader\x22), wrapper = document.querySelector(\x22.content-wrapper\x22);if (loader) { loader.style.opacity = \x220\x22; setTimeout(() => { loader.style.display = \x22none\x22; }, 1000); }if (wrapper) { wrapper.style.opacity = \x221\x22; wrapper.style.transform = \x22none\x22; wrapper.style.pointerEvents = \x22auto\x22; }};if (window.gsap) { gsap.timeline().set(\x22#ink-loader\x22, { pointerEvents: \x22none\x22 }).to(\x22.ink-spot\x22, { width: \x22400vw\x22, height: \x22400vw\x22, opacity: 0, duration: 2.5, ease: \x22expo.inOut\x22 }).to(\x22#ink-loader\x22, { opacity: 0, duration: 1 }, \x22-=1\x22).to(\x22.content-wrapper\x22, { opacity: 1, y: 0, duration: 1.5, ease: \x22power3.out\x22, onComplete: () => { document.querySelector(\x22.content-wrapper\x22).style.pointerEvents = \x22auto\x22; } }, \x22-=1.5\x22).set(\x22#ink-loader\x22, { display: \x22none\x22 }); } else { hideLoader(); }setTimeout(hideLoader, 5000);}}; try { WeatherEngine.init(); ThemeEngine.init(); PresenceEngine.init(); Interaction.init(); } catch(e) { console.error(\x22Init error:\x22, e); hideLoaderFallback(); }'
+    ].join('');
 
-</body>
-</html>`;
-    return new Response(html, { headers: { "content-type": "text/html;charset=UTF-8" } });
+    return new Response(htmlParts, { headers: { 'content-type': 'text/html;charset=UTF-8' } });
   }
 };
