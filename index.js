@@ -11,7 +11,7 @@ export default {
     const html = `<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <script type="application/json" id="initial-geo">${JSON.stringify(geo).replace(/</g, "\\u003c")}</script>
+    <script type="application/json" id="initial-geo">` + JSON.stringify(geo).replace(/</g, "\\u003c") + `</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>卜仙堂 · 时空共鸣</title>
