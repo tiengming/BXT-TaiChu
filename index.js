@@ -14,7 +14,7 @@ export default {
     <script type="application/json" id="initial-geo">` + JSON.stringify(geo).replace(/</g, "\\u003c") + `</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>卜仙堂 · 时空共鸣</title>
+    <title>卜仙堂 \u00b7 时空共鸣</title>
     <link rel="icon" type="image/svg+xml" href="https://svg.buxiantang.top/images/originFavicon.svg">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
@@ -263,7 +263,7 @@ export default {
             <a href="mailto:tiengming@qq.com" class="social-icon" target="_blank"><i class="fas fa-envelope"></i></a>
         </div>
     </div>
-    <div class="footer" id="footer-text"><span>正在同步地理位置...</span><br><span>© 卜仙堂 · 道隐无名</span></div>
+    <div class="footer" id="footer-text"><span>正在同步地理位置...</span><br><span>\u00a9 卜仙堂 \u00b7 道隐无名</span></div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
@@ -390,7 +390,7 @@ export default {
             return (usePound ? "#" : "") + (r << 16 | g << 8 | b).toString(16).padStart(6, '0');
         },
         hexToRgb(hex) {
-            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            const result = /^#?([a-f0-9]{2})([a-f0-9]{2})([a-f0-9]{2})$/i.exec(hex);
             return result ? {
                 r: parseInt(result[1], 16),
                 g: parseInt(result[2], 16),
@@ -493,7 +493,7 @@ export default {
                     ease: "power2.inOut",
                     onComplete: () => {
                         const distStr = isInvalid ? '遥遥' : Math.round(dist) + '公里';
-                        footer.innerHTML = '<span>君在\x5B' + city + '\x5D，相距' + distStr + '。</span><br><span>© 卜仙堂 · 道隐无名</span>';
+                        footer.innerHTML = '<span>君在\x5B' + city + '\x5D，相距' + distStr + '。</span><br><span>\u00a9 卜仙堂 \u00b7 道隐无名</span>';
                         gsap.to(root, {
                             '--text-base-opacity': 0.85, 
                             duration: 0.8,
