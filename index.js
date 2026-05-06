@@ -11,10 +11,10 @@ export default {
     const html = `<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <script>window.INITIAL_GEO = ${JSON.stringify(geo)};</script>
+    <script type="application/json" id="initial-geo">` + JSON.stringify(geo).replace(/</g, "\\u003c") + `</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>卜仙堂 · 时空共鸣</title>
+    <title>卜仙堂 \u00b7 时空共鸣</title>
     <link rel="icon" type="image/svg+xml" href="https://svg.buxiantang.top/images/originFavicon.svg">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
@@ -42,11 +42,17 @@ export default {
         body, html {
             width: 100%; height: 100%;
             overflow: hidden;
-            /* 优化：增加中间层色值，让渐变更柔和 */
-            background: radial-gradient(circle at 50% 35%, #ffffff 0%, var(--theme-color) 75%, var(--theme-color) 100%);
+            background: #ffffff;
             font-family: "STKaiti", "KaiTi", "Songti SC", "Noto Serif SC", "Source Han Serif SC", "Source Han Serif", serif; font-display: swap;
             -webkit-font-smoothing: antialiased;
             cursor: none;
+        }
+
+        #bg-layer {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at 50% 35%, #ffffff 0%, var(--theme-color) 75%, var(--theme-color) 100%);
+            z-index: 0;
             transition: background 2s ease;
         }
 
@@ -96,7 +102,7 @@ export default {
             border-radius: 50%;
             pointer-events: none;
             z-index: 10000;
-            transform: translate(-50%, -50%);
+            transform: translate3d(0, 0, 0) translate(-50%, -50%);
             mix-blend-mode: multiply;
         }
 
@@ -109,7 +115,11 @@ export default {
             border-radius: 50%;
             pointer-events: none;
             z-index: 9998;
-            transform: translate(-50%, -50%);
+            transform: translate3d(0, 0, 0) translate(-50%, -50%);
+        }
+        @media (pointer: coarse) {
+            #cursor-dot, #cursor-trail { display: none !important; }
+            body { cursor: auto !important; }
         }
 
         #ui-layer {
@@ -152,7 +162,7 @@ export default {
             font-size: clamp(18px, 4vw, 22px);
             letter-spacing: 4px;
             padding: 10px 0;
-            opacity: 0.7;
+            opacity: var(--nav-opacity, 0.7);
             transition: all 0.6s cubic-bezier(0.22, 1, 0.36, 1);
             text-decoration: none;
             position: relative;
@@ -177,7 +187,7 @@ export default {
             color: var(--ink-depth); 
             font-size: 24px;
             transition: all 0.5s ease;
-            opacity: 0.6;
+            opacity: var(--social-opacity, 0.6);
             text-decoration: none;
         }
 
@@ -225,6 +235,7 @@ export default {
 <body>
 
 <div id="ink-loader"><div class="ink-spot"></div></div>
+<div id="bg-layer"></div>
 <div class="bg-texture"></div>
 
 <svg style="display: none;">
@@ -252,7 +263,7 @@ export default {
             <a href="mailto:tiengming@qq.com" class="social-icon" target="_blank"><i class="fas fa-envelope"></i></a>
         </div>
     </div>
-    <div class="footer" id="footer-text"><span>正在同步地理位置...</span><br><span>© 卜仙堂 · 道隐无名</span></div>
+    <div class="footer" id="footer-text"><span>正在同步地理位置...</span><br><span>\u00a9 卜仙堂 \u00b7 道隐无名</span></div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
@@ -298,35 +309,67 @@ export default {
             }
             return CONFIG.PENTAD_MAP["东风解冻"];
         },
+        getLuminance(rgb) {
+            const a = [rgb.r, rgb.g, rgb.b].map(v => {
+                v /= 255;
+                return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+            });
+            return a[0] * 0.2126 + a[1] * 0.7152 + a[2] * 0.0722;
+        },
+        getContrast(rgb1, rgb2) {
+            const l1 = this.getLuminance(rgb1) + 0.05;
+            const l2 = this.getLuminance(rgb2) + 0.05;
+            return l1 > l2 ? l1 / l2 : l2 / l1;
+        },
         applyTheme(color, nightOpacity) {
             const root = document.documentElement;
-            const rgb = this.hexToRgb(color);
+            const bgRgb = this.hexToRgb(color);
             
-            // 计算感知亮度
-            const brightness = (rgb.r * 299 + rgb.g * 587 + rgb.b * 114) / 1000;
+            const darkInk = { r: 30, g: 39, b: 50 }; // #1E2732
+            const lightInk = { r: 255, g: 255, b: 255 }; // #FFFFFF
             
-            // 1. 动态设置墨色 (Ink Color)
-            // 如果背景太亮，使用深墨色；如果背景太暗，使用纯白
-            // 阈值设为 165 左右，能更好地处理绿、黄等高亮度色系
-            const inkColor = brightness < 165 ? "#FFFFFF" : "#1E2732";
+            const darkContrast = this.getContrast(bgRgb, darkInk);
+            const lightContrast = this.getContrast(bgRgb, lightInk);
             
-            // 2. 智能计算悬浮色 (Hover Accent)
-            // 如果背景是深色，悬浮色应该是背景颜色的“提亮版”
-            // 如果背景是浅色，悬浮色应该是背景颜色的“加深版”
-            let hoverColor;
-            if (brightness < 165) {
-                // 深色背景下：悬浮变为琥珀金或浅青，增加呼吸感
-                hoverColor = "#D58A46"; 
-            } else {
-                // 浅色背景下：悬浮变为深主题色，增加厚重感
-                hoverColor = this.adjustColor(color, -30); 
+            let inkColor = darkContrast > lightContrast ? "#1E2732" : "#FFFFFF";
+            let currentContrast = Math.max(darkContrast, lightContrast);
+
+            if (currentContrast < 4.5) {
+                const pureBlack = { r: 0, g: 0, b: 0 };
+                if (this.getContrast(bgRgb, pureBlack) > currentContrast) {
+                    inkColor = "#000000";
+                    currentContrast = this.getContrast(bgRgb, pureBlack);
+                }
             }
 
+            let hoverColor;
+            const amberGold = { r: 213, g: 138, b: 70 };
+            if (inkColor === "#FFFFFF") {
+                if (this.getContrast(bgRgb, amberGold) < 3) {
+                    hoverColor = "#FFD700";
+                } else {
+                    hoverColor = "#D58A46";
+                }
+            } else {
+                hoverColor = this.adjustColor(color, -40);
+                if (this.getContrast(bgRgb, this.hexToRgb(hoverColor)) < 3) {
+                    hoverColor = "#8C1C13";
+                }
+            }
+
+            const opacityBase = currentContrast < 5.5 ? 0.95 : 0.85;
+
+            const navOpacity = currentContrast < 5.5 ? 0.9 : 0.7;
+            const socialOpacity = currentContrast < 5.5 ? 0.8 : 0.6;
+
             gsap.to(root, {
-                '--theme-color': color,
-                '--night-opacity': nightOpacity,
-                '--ink-depth': inkColor,
-                '--hover-accent': hoverColor, // 新增变量
+                "--theme-color": color,
+                "--night-opacity": nightOpacity,
+                "--ink-depth": inkColor,
+                "--hover-accent": hoverColor,
+                "--text-base-opacity": opacityBase,
+                "--nav-opacity": navOpacity,
+                "--social-opacity": socialOpacity,
                 duration: 2.5,
                 ease: "sine.inOut"
             });
@@ -347,7 +390,7 @@ export default {
             return (usePound ? "#" : "") + (r << 16 | g << 8 | b).toString(16).padStart(6, '0');
         },
         hexToRgb(hex) {
-            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            const result = /^#?([a-f0-9]{2})([a-f0-9]{2})([a-f0-9]{2})$/i.exec(hex);
             return result ? {
                 r: parseInt(result[1], 16),
                 g: parseInt(result[2], 16),
@@ -391,8 +434,12 @@ export default {
             this.updateUI(dist, pos ? pos.city : "未知");
         },
         async getLocation() {
-            if (window.INITIAL_GEO && window.INITIAL_GEO.lat && window.INITIAL_GEO.lon) {
-                return { ...window.INITIAL_GEO, ts: Date.now() };
+            const geoScript = document.getElementById("initial-geo");
+            if (geoScript) {
+                try {
+                    const geo = JSON.parse(geoScript.textContent);
+                    if (geo && geo.lat && geo.lon) return { ...geo, ts: Date.now() };
+                } catch (e) {}
             }
             const cached = localStorage.getItem('bxt_location');
             if (cached) {
@@ -400,7 +447,10 @@ export default {
                 if (Date.now() - data.ts < 86400000) return data;
             }
             try {
-                const res = await fetch('https://ipwho.is/');
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 3000);
+                const res = await fetch('https://ipwho.is/', { signal: controller.signal });
+                clearTimeout(timeoutId);
                 const data = await res.json();
                 if (data.success) {
                     const result = { lat: data.latitude, lon: data.longitude, city: data.city, ts: Date.now() };
@@ -418,7 +468,7 @@ export default {
                 const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
                           Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
                           Math.sin(dLon/2) * Math.sin(dLon/2);
-                const d = 2 * R * Math.asin(Math.sqrt(a));
+                const d = 2 * R * Math.asin(Math.min(1, Math.sqrt(a)));
                 return isNaN(d) ? null : d;
             } catch (e) { return null; }
         },
@@ -443,7 +493,7 @@ export default {
                     ease: "power2.inOut",
                     onComplete: () => {
                         const distStr = isInvalid ? '遥遥' : Math.round(dist) + '公里';
-                        footer.innerHTML = '<span>君在\x5B' + city + '\x5D，相距' + distStr + '。</span><br><span>© 卜仙堂 · 道隐无名</span>';
+                        footer.innerHTML = '<span>君在\x5B' + city + '\x5D，相距' + distStr + '。</span><br><span>\u00a9 卜仙堂 \u00b7 道隐无名</span>';
                         gsap.to(root, {
                             '--text-base-opacity': 0.85, 
                             duration: 0.8,
@@ -486,13 +536,11 @@ export default {
                 const render = () => {
                     dotX += (mouseX - dotX) * 0.2;
                     dotY += (mouseY - dotY) * 0.2;
-                    dot.style.left = dotX + 'px';
-                    dot.style.top = dotY + 'px';
+                    dot.style.transform = "translate3d(" + dotX + "px, " + dotY + "px, 0) translate(-50%, -50%)";
 
                     trailX += (mouseX - trailX) * 0.1;
                     trailY += (mouseY - trailY) * 0.1;
-                    trail.style.left = trailX + 'px';
-                    trail.style.top = trailY + 'px';
+                    trail.style.transform = "translate3d(" + trailX + "px, " + trailY + "px, 0) translate(-50%, -50%)";
 
                     requestAnimationFrame(render);
                 };
@@ -506,12 +554,19 @@ export default {
               .to('.content-wrapper', { opacity: 1, y: 0, duration: 1.5, ease: "power3.out" }, "-=1.5")
               .set('#ink-loader', { display: 'none' });
 
-            // 5秒强制兜底，确保UI可见
+            // 5秒强制兜底，确保UI可见 (原生实现，不依赖 GSAP)
             setTimeout(() => {
                 const loader = document.getElementById('ink-loader');
+                const wrapper = document.querySelector('.content-wrapper');
                 if (loader && loader.style.display !== 'none') {
-                    gsap.to('#ink-loader', { opacity: 0, duration: 1, onComplete: () => loader.style.display = 'none' });
-                    gsap.to('.content-wrapper', { opacity: 1, y: 0, duration: 1 });
+                    loader.style.transition = 'opacity 1s ease';
+                    loader.style.opacity = '0';
+                    if (wrapper) {
+                        wrapper.style.transition = 'opacity 1s ease, transform 1s ease';
+                        wrapper.style.opacity = '1';
+                        wrapper.style.transform = 'translateY(0)';
+                    }
+                    setTimeout(() => { loader.style.display = 'none'; }, 1000);
                 }
             }, 5000);
         }
